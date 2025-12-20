@@ -1,641 +1,354 @@
 using UnityEngine;
 
+/// <summary>
+/// Main controller for enemy AI using behavior tree pattern.
+/// Delegates to specialized helper classes for better separation of concerns.
+/// </summary>
 public class EnemyController : MonoBehaviour
 {
-    [SerializeField] private float detectionRange = 10f; // Increased default range
+    #region Serialized Fields
+
+    [SerializeField] private float detectionRange = 10f;
     [SerializeField] private float chaseSpeed = 4f;
-    [SerializeField] private float attackRange = 1.5f; // Distance to attack player
-    [SerializeField] private float attackCooldown = 1.5f; // Time between attacks
+    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private float attackCooldown = 1.5f;
     [SerializeField] private string idleAnimationName = "Idle";
     [SerializeField] private string walkAnimationName = "Walk";
     [SerializeField] private string attack01AnimationName = "attack01";
     [SerializeField] private string attack02AnimationName = "attack02";
     [SerializeField] private string hurtAnimationName = "hurt";
     [SerializeField] private string deathAnimationName = "death";
-    [SerializeField] private bool enableDebugLogs = true; // Toggle debug logging
-    [SerializeField] private bool usePathfinding = true; // Use pathfinding or direct chase
-    [SerializeField] private bool showDebugGizmos = true; // Show visual debug info in Scene view
-    [SerializeField] private bool showOnScreenDebug = true; // Show on-screen debug text
-    [SerializeField] private bool showDetailedGizmos = true; // Show detailed gizmo information
-    [SerializeField] private KeyCode toggleDebugKey = KeyCode.F1; // Key to toggle debug display
-    [SerializeField] private Vector2 debugTextOffset = new Vector2(0, 50); // Offset for on-screen debug text
-    
-    private float lastAttackTime = 0f;
-    private bool isAttacking = false;
-    private bool isHurt = false;
-    private bool isDead = false;
-    private float previousHealth = 0f;
-    private bool isInitialized = false;
-    private float hurtAnimationStartTime = 0f;
-    
-    private enum EnemyState
-    {
-        Idle,
-        Chasing
-    }
-    
-    private EnemyState currentState = EnemyState.Idle;
-    private SpriteRenderer spriteRenderer;
-    private Transform playerTransform;
-    private EnemyHealth enemyHealth;
-    private Rigidbody2D rb;
-    private Animator animator;
-    private SimplePathfinding2D pathfinding;
-    private string currentAnimationState = "";
-    private Vector2 lastMovementDirection = Vector2.zero;
-    private Vector2 movement = Vector2.zero; // Movement vector calculated in Update, applied in FixedUpdate
-    private bool isChasing = false;
-    private float distanceToPlayer = 0f; // Cached distance for debug display
-    private bool debugDisplayEnabled = true; // Current state of debug display
-    
+    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool usePathfinding = true;
+
+    #endregion
+
+    #region Private Fields
+
+    private EnemyContext context;
+    private BTNode behaviorTree;
+    private EnemyAnimationController animationController;
+    private EnemyDebugDisplay debugDisplay;
+    private EnemyComponentInitializer.InitializedComponents components;
+
+    #endregion
+
+    #region Unity Lifecycle
+
     void Start()
     {
-        // Get or add Rigidbody2D component
-        rb = GetComponent<Rigidbody2D>();
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody2D>();
-        }
-        rb.gravityScale = 0; // No gravity for top-down movement
-        rb.freezeRotation = true; // Prevent rotation
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // Better collision detection
-        rb.bodyType = RigidbodyType2D.Dynamic; // Ensure it's dynamic for collisions
-        
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[Enemy {gameObject.name}] Rigidbody2D setup: gravityScale={rb.gravityScale}, bodyType={rb.bodyType}, freezeRotation={rb.freezeRotation}");
-        }
-        
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null)
-        {
-            Debug.LogWarning("SpriteRenderer not found on Enemy. Sprite flipping will not work.");
-        }
-        
-        // Get Animator component
-        animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogWarning("Animator not found on Enemy. Animation will not work.");
-        }
-        
-        // Get or add EnemyHealth component
-        enemyHealth = GetComponent<EnemyHealth>();
-        if (enemyHealth == null)
-        {
-            enemyHealth = gameObject.AddComponent<EnemyHealth>();
-        }
-        
-        // Get or add EnemyHealthBar component for health bar above enemy
-        EnemyHealthBar healthBar = GetComponent<EnemyHealthBar>();
-        if (healthBar == null)
-        {
-            healthBar = gameObject.AddComponent<EnemyHealthBar>();
-        }
-        
-        // Get or add SimplePathfinding2D component for 2D pathfinding
-        pathfinding = GetComponent<SimplePathfinding2D>();
-        if (pathfinding == null)
-        {
-            pathfinding = gameObject.AddComponent<SimplePathfinding2D>();
-        }
-        
-        // Find player by tag (try multiple methods)
-        GameObject player = GameObject.FindWithTag("Player");
-        if (player == null)
-        {
-            // Try finding by name as fallback
-            player = GameObject.Find("Player");
-        }
-        if (player == null)
-        {
-            // Try finding PlayerController component
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
-            if (playerController != null)
-            {
-                player = playerController.gameObject;
-            }
-        }
-        
-        if (player != null)
-        {
-            playerTransform = player.transform;
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[Enemy {gameObject.name}] Found player at {playerTransform.position}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"[Enemy {gameObject.name}] Player not found! Make sure Player has 'Player' tag or is named 'Player'.");
-        }
-        
-        // Subscribe to health events
-        if (enemyHealth != null)
-        {
-            previousHealth = enemyHealth.CurrentHealth;
-            enemyHealth.OnHealthChanged += OnHealthChanged;
-            enemyHealth.OnDeath += OnDeath;
-            isInitialized = true;
-        }
+        InitializeComponents();
+        InitializeContext();
+        InitializePlayer();
+        InitializeAnimationController();
+        InitializeDebugDisplay();
+        SubscribeToHealthEvents();
+        BuildBehaviorTree();
     }
-    
+
     void OnDestroy()
     {
-        // Unsubscribe from health events
-        if (enemyHealth != null)
-        {
-            enemyHealth.OnHealthChanged -= OnHealthChanged;
-            enemyHealth.OnDeath -= OnDeath;
-        }
+        UnsubscribeFromHealthEvents();
     }
-    
-    
+
     void Update()
     {
-        if (playerTransform == null || spriteRenderer == null) return;
-        
+        if (context.PlayerTransform == null || context.SpriteRenderer == null) return;
+
         // Don't process if dead
-        if (isDead)
+        if (context.IsDead)
         {
-            movement = Vector2.zero;
-            UpdateAnimation();
+            context.Movement = Vector2.zero;
+            animationController.UpdateAnimation(context.IsDead, context.IsHurt, context.IsAttacking, context.Movement);
             return;
         }
-        
-        // Don't move or attack if currently attacking
-        if (isAttacking)
-        {
-            movement = Vector2.zero;
-            UpdateAnimation();
-            return;
-        }
-        
+
         // Handle hurt animation completion
-        if (isHurt)
+        bool stillHurt = animationController.HandleHurtAnimation(context.IsHurt, context.HurtAnimationStartTime);
+        context.IsHurt = stillHurt;
+
+        // Don't process behavior tree if hurt (let animation play)
+        if (context.IsHurt)
         {
-            if (animator != null)
-            {
-                // Wait a small amount of time for animation to start (at least 0.05 seconds)
-                float timeSinceHurtStart = Time.time - hurtAnimationStartTime;
-                if (timeSinceHurtStart < 0.05f)
-                {
-                    // Animation just started, wait a bit before checking
-                    movement = Vector2.zero;
-                    UpdateAnimation();
-                    return;
-                }
-                
-                AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-                // Check if hurt animation exists and has finished, or if animation doesn't exist
-                bool hurtAnimExists = !string.IsNullOrEmpty(hurtAnimationName);
-                bool hurtAnimPlaying = hurtAnimExists && stateInfo.IsName(hurtAnimationName);
-                bool hurtAnimFinished = hurtAnimPlaying && stateInfo.normalizedTime >= 1.0f;
-                
-                if (hurtAnimFinished)
-                {
-                    // Hurt animation finished
-                    isHurt = false;
-                    currentAnimationState = ""; // Reset to allow animation change
-                    if (enableDebugLogs)
-                    {
-                        Debug.Log($"[Enemy {gameObject.name}] Hurt animation finished");
-                    }
-                }
-                else if (hurtAnimPlaying)
-                {
-                    // Still playing hurt animation
-                    movement = Vector2.zero;
-                    UpdateAnimation();
-                    return; // Still playing hurt animation, don't process other logic
-                }
-                else if (hurtAnimExists)
-                {
-                    // Animation name exists but not playing - might be an issue, but wait a bit more
-                    if (timeSinceHurtStart > 0.2f)
-                    {
-                        // Been waiting too long, animation might not exist in animator
-                        if (enableDebugLogs)
-                        {
-                            Debug.LogWarning($"[Enemy {gameObject.name}] Hurt animation '{hurtAnimationName}' not found in Animator Controller");
-                        }
-                        isHurt = false;
-                        currentAnimationState = ""; // Reset to allow animation change
-                    }
-                    else
-                    {
-                        // Still waiting for animation to start
-                        movement = Vector2.zero;
-                        UpdateAnimation();
-                        return;
-                    }
-                }
-                else
-                {
-                    // Hurt animation doesn't exist, just clear the hurt state
-                    isHurt = false;
-                }
-            }
-            else
-            {
-                // No animator, just clear hurt state
-                isHurt = false;
-            }
+            animationController.UpdateAnimation(context.IsDead, context.IsHurt, context.IsAttacking, context.Movement);
+            return;
         }
-        
-        // Calculate distance to player
-        distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
-        
-        // Toggle debug display with key
-        if (Input.GetKeyDown(toggleDebugKey))
-        {
-            debugDisplayEnabled = !debugDisplayEnabled;
-        }
-        
+
+        // Update cached distance for debug display
+        context.DistanceToPlayer = EnemyRangeDetector.GetDistanceToPlayer(transform.position, context.PlayerTransform);
+
         // Debug logging
-        if (enableDebugLogs && Time.frameCount % 60 == 0) // Log every 60 frames to avoid spam
+        if (enableDebugLogs && Time.frameCount % EnemyConstants.DEBUG_LOG_FRAME_INTERVAL == 0)
         {
-            Debug.Log($"[Enemy {gameObject.name}] Distance={distanceToPlayer:F2}, Range={detectionRange}, State={currentState}, isChasing={isChasing}, movement={movement}, RB.velocity={rb.linearVelocity}");
+            Debug.Log($"[Enemy {gameObject.name}] Distance={context.DistanceToPlayer:F2}, Range={detectionRange}, " +
+                      $"isChasing={context.IsChasing}, movement={context.Movement}, " +
+                      $"RB.velocity={context.Rigidbody?.linearVelocity}");
         }
-        
-        // Check if player is in attack range
-        if (distanceToPlayer <= attackRange)
+
+        // Execute behavior tree
+        if (behaviorTree != null)
         {
-            // Stop moving and attack
-            movement = Vector2.zero;
-            TryAttack(distanceToPlayer);
+            behaviorTree.Execute(context);
         }
-        else if (distanceToPlayer <= detectionRange)
-        {
-            // Chase player
-            isChasing = true;
-            currentState = EnemyState.Chasing;
-            
-            // Use 2D pathfinding to get direction toward player (avoids obstacles)
-            Vector2 directionToPlayer;
-            if (usePathfinding && pathfinding != null)
-            {
-                directionToPlayer = pathfinding.GetDirectionToTarget(transform.position, playerTransform.position);
-                // Fallback to direct if pathfinding returns zero
-                if (directionToPlayer.magnitude < 0.1f)
-                {
-                    directionToPlayer = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
-                    if (enableDebugLogs && Time.frameCount % 60 == 0)
-                    {
-                        Debug.LogWarning($"[Enemy {gameObject.name}] Pathfinding returned zero vector, using direct direction");
-                    }
-                }
-            }
-            else
-            {
-                // Direct chase (simpler, like reference code)
-                directionToPlayer = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
-            }
-            
-            movement = directionToPlayer;
-            lastMovementDirection = directionToPlayer;
-            
-            if (enableDebugLogs && Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[Enemy {gameObject.name}] Chasing: direction={directionToPlayer}, magnitude={directionToPlayer.magnitude}");
-            }
-        }
-        else
-        {
-            // Player out of range - idle
-            isChasing = false;
-            currentState = EnemyState.Idle;
-            movement = Vector2.zero;
-        }
-        
-        // Update animation based on movement
-        UpdateAnimation();
-        
-        // Flip sprite based on movement direction
-        if (movement.magnitude > 0.1f)
-        {
-            if (movement.x < -0.1f)
-            {
-                spriteRenderer.flipX = true;
-            }
-            else if (movement.x > 0.1f)
-            {
-                spriteRenderer.flipX = false;
-            }
-        }
+
+        // Update animation based on movement and state
+        animationController.UpdateAnimation(context.IsDead, context.IsHurt, context.IsAttacking, context.Movement);
     }
-    
+
     void FixedUpdate()
     {
-        // Apply movement in FixedUpdate (like reference code)
-        if (rb == null) return;
-        
-        if (movement.magnitude > 0.1f)
+        // Apply movement in FixedUpdate
+        if (context.Rigidbody == null) return;
+
+        if (context.Movement.magnitude > EnemyConstants.MOVEMENT_THRESHOLD)
         {
-            Vector2 newVelocity = movement * chaseSpeed;
-            rb.linearVelocity = newVelocity;
+            // Use MovePosition for kinematic rigidbodies (prevents pushing player)
+            // For kinematic bodies, MovePosition is the correct way to move
+            Vector2 newPosition = (Vector2)transform.position + context.Movement * chaseSpeed * Time.fixedDeltaTime;
+            context.Rigidbody.MovePosition(newPosition);
+
+            if (enableDebugLogs && Time.frameCount % EnemyConstants.DEBUG_LOG_FRAME_INTERVAL == 0)
+            {
+                Debug.Log($"[Enemy {gameObject.name}] FixedUpdate: movement={context.Movement}, " +
+                          $"speed={chaseSpeed}, position={transform.position}");
+            }
+        }
+        // No need to set velocity to zero for kinematic bodies - they don't use velocity
+    }
+
+    #endregion
+
+    #region Initialization
+
+    private void InitializeComponents()
+    {
+        components = EnemyComponentInitializer.InitializeComponents(gameObject, enableDebugLogs);
+    }
+
+    private void InitializeContext()
+    {
+        context = new EnemyContext
+        {
+            // References
+            SpriteRenderer = components.SpriteRenderer,
+            Rigidbody = components.Rigidbody,
+            Animator = components.Animator,
+            EnemyHealth = components.EnemyHealth,
+            Pathfinding = components.Pathfinding,
+
+            // Configuration
+            AttackRange = attackRange,
+            DetectionRange = detectionRange,
+            AttackCooldown = attackCooldown,
+            UsePathfinding = usePathfinding,
+            Attack01AnimationName = attack01AnimationName,
+            Attack02AnimationName = attack02AnimationName,
+            EnableDebugLogs = enableDebugLogs,
+
+            // Initial state
+            IsDead = false,
+            IsHurt = false,
+            IsAttacking = false,
+            IsChasing = false,
+            Movement = Vector2.zero,
+            LastMovementDirection = Vector2.zero,
+            CurrentAnimationState = "",
             
-            if (enableDebugLogs && Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[Enemy {gameObject.name}] FixedUpdate: movement={movement}, speed={chaseSpeed}, velocity={rb.linearVelocity}");
-            }
-        }
-        else
-        {
-            rb.linearVelocity = Vector2.zero;
-        }
+            // Oscillation detection
+            IsOscillating = false,
+            OscillationDetectionStartTime = 0f,
+            HorizontalDirectionChanges = 0,
+            LastHorizontalDirection = 0f
+        };
     }
-    
-    private void UpdateAnimation()
+
+    private void InitializePlayer()
     {
-        if (animator == null) return;
+        context.PlayerTransform = EnemyPlayerFinder.FindPlayer(enableDebugLogs);
         
-        // Don't change animation if dead
-        if (isDead)
+        // Ignore collision with player to prevent pushing
+        if (context.PlayerTransform != null)
         {
-            return;
-        }
-        
-        // Don't change animation if currently hurt
-        if (isHurt)
-        {
-            return;
-        }
-        
-        // Don't change animation if currently attacking
-        if (isAttacking)
-        {
-            // Check if attack animation has finished
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (stateInfo.IsName(attack01AnimationName) || stateInfo.IsName(attack02AnimationName))
+            PlayerController playerController = context.PlayerTransform.GetComponent<PlayerController>();
+            if (playerController != null)
             {
-                if (stateInfo.normalizedTime >= 1.0f)
+                Collider2D enemyCollider = GetComponent<Collider2D>();
+                if (enemyCollider != null)
                 {
-                    // Attack animation finished, return to normal animations
-                    isAttacking = false;
-                    currentAnimationState = ""; // Reset to allow animation change
+                    playerController.IgnoreCollisionWithEnemy(enemyCollider);
                 }
-            }
-            return;
-        }
-        
-        // Determine if moving based on movement vector
-        bool isMoving = movement.magnitude > 0.1f;
-        string targetAnimation = isMoving ? walkAnimationName : idleAnimationName;
-        
-        // Check if we need to switch animations
-        if (currentAnimationState != targetAnimation)
-        {
-            animator.Play(targetAnimation, 0, 0f);
-            currentAnimationState = targetAnimation;
-        }
-        // Check if current animation has finished and restart it to create loop effect
-        else if (currentAnimationState != "")
-        {
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            // If animation has finished (normalizedTime >= 1.0) and it's still the same state, restart it
-            if (stateInfo.IsName(currentAnimationState) && stateInfo.normalizedTime >= 1.0f)
-            {
-                animator.Play(currentAnimationState, 0, 0f); // Restart from beginning to create loop
             }
         }
     }
-    
-    private void TryAttack(float distanceToPlayer)
+
+    private void InitializeAnimationController()
     {
-        // Check if enough time has passed since last attack
-        if (Time.time - lastAttackTime < attackCooldown) return;
-        
-        // Don't attack if already attacking
-        if (isAttacking) return;
-        
-        // Check if player is still in range and has health component
-        if (playerTransform == null) return;
-        
-        PlayerHealth playerHealth = playerTransform.GetComponent<PlayerHealth>();
-        if (playerHealth != null && enemyHealth != null)
+        animationController = new EnemyAnimationController(
+            components.Animator,
+            idleAnimationName,
+            walkAnimationName,
+            attack01AnimationName,
+            attack02AnimationName,
+            hurtAnimationName,
+            deathAnimationName,
+            enableDebugLogs
+        );
+    }
+
+    private void InitializeDebugDisplay()
+    {
+        debugDisplay = GetComponent<EnemyDebugDisplay>();
+        if (debugDisplay == null)
         {
-            if (distanceToPlayer <= attackRange)
-            {
-                // Perform attack
-                isAttacking = true;
-                
-                // Play attack animation (randomly choose between attack01 and attack02)
-                string attackAnimation = Random.Range(0, 2) == 0 ? attack01AnimationName : attack02AnimationName;
-                if (animator != null)
-                {
-                    animator.Play(attackAnimation, 0, 0f);
-                    currentAnimationState = attackAnimation;
-                }
-                
-                // Deal damage to player
-                playerHealth.TakeDamage(enemyHealth.AttackDamage);
-                lastAttackTime = Time.time;
-                
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[Enemy {gameObject.name}] Attacked player for {enemyHealth.AttackDamage} damage!");
-                }
-                
-                // Reset attack flag after animation (handled in UpdateAnimation)
-            }
+            debugDisplay = gameObject.AddComponent<EnemyDebugDisplay>();
+        }
+        debugDisplay.Initialize(
+            context,
+            transform,
+            components.Rigidbody,
+            detectionRange,
+            attackRange,
+            chaseSpeed,
+            usePathfinding,
+            components.Pathfinding
+        );
+    }
+
+    private void SubscribeToHealthEvents()
+    {
+        if (context.EnemyHealth != null)
+        {
+            context.PreviousHealth = context.EnemyHealth.CurrentHealth;
+            context.EnemyHealth.OnHealthChanged += OnHealthChanged;
+            context.EnemyHealth.OnDeath += OnDeath;
         }
     }
-    
+
+    private void UnsubscribeFromHealthEvents()
+    {
+        if (context.EnemyHealth != null)
+        {
+            context.EnemyHealth.OnHealthChanged -= OnHealthChanged;
+            context.EnemyHealth.OnDeath -= OnDeath;
+        }
+    }
+
+    #endregion
+
+    #region Behavior Tree
+
+    private void BuildBehaviorTree()
+    {
+        // If already attacking, continue the attack sequence
+        BTSequence continueAttackSequence = new BTSequence(
+            new IsAttacking(),
+            new Attack(transform, animationController)
+        );
+
+        // New attack sequence: Check range -> Face player -> Stop movement -> Can attack -> Attack
+        BTSequence newAttackSequence = new BTSequence(
+            new IsPlayerInAttackRange(transform),
+            new FacePlayer(transform),
+            new StopMovement(),
+            new CanAttack(),
+            new Attack(transform, animationController)
+        );
+
+        // Attack selector: Continue existing attack OR start new attack
+        BTSelector attackSelector = new BTSelector(
+            continueAttackSequence,
+            newAttackSequence
+        );
+
+        // When player is in attack range but can't attack (cooldown), stop movement and face player
+        BTSequence waitInAttackRangeSequence = new BTSequence(
+            new IsPlayerInAttackRange(transform),
+            new FacePlayer(transform),
+            new StopMovement()
+        );
+
+        // Chase sequence: Check NOT in attack range -> Check detection range -> Calculate direction -> Face movement -> Move
+        BTSequence chaseSequence = new BTSequence(
+            new IsPlayerNotInAttackRange(transform), // Prevent chase when player is in attack range (including on top)
+            new IsPlayerInDetectionRange(transform),
+            new CalculateDirectionToPlayer(transform),
+            new FaceMovementDirection(),
+            new MoveTowardPlayer()
+        );
+
+        // Root selector: Try attack, then wait in attack range, then chase, then idle
+        behaviorTree = new BTSelector(
+            attackSelector,
+            waitInAttackRangeSequence, // Stop and face player when in attack range but can't attack
+            chaseSequence,
+            new Idle()
+        );
+    }
+
+    #endregion
+
+    #region Health Events
+
     private void OnHealthChanged(float currentHealth, float maxHealth)
     {
         // Play hurt animation when taking damage (but not if dead or dying)
-        if (!isDead && currentHealth > 0 && animator != null && isInitialized)
+        if (!context.IsDead && currentHealth > 0 && components.Animator != null)
         {
             // Check if health actually decreased (damage was taken)
-            if (currentHealth < previousHealth && !isHurt && !isAttacking)
+            if (currentHealth < context.PreviousHealth && !context.IsHurt)
             {
                 PlayHurtAnimation();
             }
         }
-        
+
         // Update previous health for next comparison
-        previousHealth = currentHealth;
+        context.PreviousHealth = currentHealth;
     }
-    
+
     private void OnDeath()
     {
-        if (isDead) return; // Already dead
-        
-        isDead = true;
-        
+        if (context.IsDead) return; // Already dead
+
+        context.IsDead = true;
+
         // Stop all movement
-        movement = Vector2.zero;
-        if (rb != null)
+        context.Movement = Vector2.zero;
+        if (context.Rigidbody != null)
         {
-            rb.linearVelocity = Vector2.zero;
+            context.Rigidbody.linearVelocity = Vector2.zero;
         }
-        
-        // Disable colliders (optional - you may want to keep them for cleanup)
+
+        // Disable colliders
         Collider2D[] colliders = GetComponents<Collider2D>();
         foreach (Collider2D col in colliders)
         {
             col.enabled = false;
         }
-        
+
         // Play death animation
-        if (animator != null)
-        {
-            animator.Play(deathAnimationName, 0, 0f);
-            currentAnimationState = deathAnimationName;
-        }
-        
+        animationController.PlayDeathAnimation();
+        context.CurrentAnimationState = deathAnimationName;
+
         Debug.Log($"Enemy {gameObject.name} died!");
     }
-    
+
     private void PlayHurtAnimation()
     {
-        if (animator == null || isDead) return;
+        if (components.Animator == null || context.IsDead) return;
+
+        context.IsHurt = true;
+        context.HurtAnimationStartTime = Time.time;
+        context.Movement = Vector2.zero; // Stop movement during hurt animation
         
-        isHurt = true;
-        hurtAnimationStartTime = Time.time;
-        movement = Vector2.zero; // Stop movement during hurt animation
-        
-        if (animator != null)
+        // Reset attack state when hurt animation interrupts attack
+        if (context.IsAttacking)
         {
-            animator.Play(hurtAnimationName, 0, 0f);
-            currentAnimationState = hurtAnimationName;
-            
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[Enemy {gameObject.name}] Playing hurt animation: {hurtAnimationName}");
-            }
+            context.IsAttacking = false;
         }
+
+        animationController.PlayHurtAnimation();
+        context.CurrentAnimationState = hurtAnimationName;
     }
-    
-    // Visual debug in Scene view
-    void OnDrawGizmos()
-    {
-        if (!showDebugGizmos) return;
-        
-        // Draw detection range
-        Gizmos.color = new Color(1f, 1f, 0f, 0.3f); // Yellow with transparency
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
-        
-        // Draw attack range
-        Gizmos.color = new Color(1f, 0f, 0f, 0.5f); // Red with transparency
-        Gizmos.DrawWireSphere(transform.position, attackRange);
-        
-        // Draw direction to player if found
-        if (playerTransform != null)
-        {
-            Vector3 direction = (playerTransform.position - transform.position);
-            float distance = direction.magnitude;
-            direction.Normalize();
-            
-            // Draw line to player
-            Gizmos.color = distance <= detectionRange ? Color.green : Color.gray;
-            Gizmos.DrawRay(transform.position, direction * Mathf.Min(distance, detectionRange));
-            
-            // Draw current velocity
-            if (rb != null && rb.linearVelocity.magnitude > 0.1f)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawRay(transform.position, rb.linearVelocity * 0.5f);
-            }
-            
-            // Draw movement vector
-            if (movement.magnitude > 0.1f)
-            {
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawRay(transform.position, movement * 2f);
-            }
-            
-            // Detailed gizmos
-            if (showDetailedGizmos)
-            {
-                // Draw player position marker
-                Gizmos.color = Color.blue;
-                Gizmos.DrawWireSphere(playerTransform.position, 0.3f);
-                
-                // Draw pathfinding direction if using pathfinding
-                if (usePathfinding && pathfinding != null && distance <= detectionRange)
-                {
-                    Vector2 pathDirection = pathfinding.GetDirectionToTarget(transform.position, playerTransform.position);
-                    if (pathDirection.magnitude > 0.1f)
-                    {
-                        Gizmos.color = Color.yellow;
-                        Gizmos.DrawRay(transform.position, pathDirection * 3f);
-                    }
-                }
-            }
-        }
-    }
-    
-    // On-screen debug text
-    void OnGUI()
-    {
-        if (!showOnScreenDebug || !debugDisplayEnabled) return;
-        if (playerTransform == null) return;
-        
-        // Get screen position of enemy
-        Vector3 screenPos = Camera.main.WorldToScreenPoint(transform.position + (Vector3)debugTextOffset);
-        
-        // Only show if enemy is on screen
-        if (screenPos.z < 0) return;
-        
-        // Convert to GUI coordinates (Y is flipped)
-        float guiY = Screen.height - screenPos.y;
-        
-        // Create debug text
-        string debugText = $"Enemy: {gameObject.name}\n";
-        debugText += $"State: {currentState}\n";
-        debugText += $"Distance: {distanceToPlayer:F2}m\n";
-        debugText += $"Detection Range: {detectionRange}m\n";
-        debugText += $"Attack Range: {attackRange}m\n";
-        debugText += $"Is Chasing: {isChasing}\n";
-        debugText += $"Is Attacking: {isAttacking}\n";
-        debugText += $"Is Hurt: {isHurt}\n";
-        debugText += $"Is Dead: {isDead}\n";
-        
-        if (rb != null)
-        {
-            debugText += $"Velocity: {rb.linearVelocity.magnitude:F2} m/s\n";
-            debugText += $"Velocity: ({rb.linearVelocity.x:F2}, {rb.linearVelocity.y:F2})\n";
-        }
-        
-        debugText += $"Movement: ({movement.x:F2}, {movement.y:F2})\n";
-        debugText += $"Chase Speed: {chaseSpeed}\n";
-        debugText += $"Use Pathfinding: {usePathfinding}\n";
-        
-        if (enemyHealth != null)
-        {
-            debugText += $"Health: {enemyHealth.CurrentHealth:F0}/{enemyHealth.MaxHealth:F0}\n";
-        }
-        
-        // Calculate text size
-        GUIStyle style = new GUIStyle();
-        style.normal.textColor = Color.white;
-        style.fontSize = 12;
-        style.fontStyle = FontStyle.Bold;
-        style.alignment = TextAnchor.UpperLeft;
-        style.normal.background = MakeTex(2, 2, new Color(0, 0, 0, 0.7f)); // Semi-transparent black background
-        
-        Vector2 textSize = style.CalcSize(new GUIContent(debugText));
-        
-        // Draw background box
-        GUI.Box(new Rect(screenPos.x, guiY, textSize.x + 10, textSize.y + 10), "", style);
-        
-        // Draw text
-        GUI.Label(new Rect(screenPos.x + 5, guiY + 5, textSize.x, textSize.y), debugText, style);
-        
-    }
-    
-    // Helper to create texture for background
-    private Texture2D MakeTex(int width, int height, Color col)
-    {
-        Color[] pix = new Color[width * height];
-        for (int i = 0; i < pix.Length; i++)
-            pix[i] = col;
-        
-        Texture2D result = new Texture2D(width, height);
-        result.SetPixels(pix);
-        result.Apply();
-        return result;
-    }
+
+    #endregion
 }

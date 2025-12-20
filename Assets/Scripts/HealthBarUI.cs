@@ -1,15 +1,21 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class HealthBarUI : MonoBehaviour
 {
     [SerializeField] private Image healthBarFill;
-    [SerializeField] private Text healthText;
-    [SerializeField] private Text healthTextShadow; // Optional shadow for better visibility
+    [SerializeField] private TextMeshProUGUI healthText;
+    [SerializeField] private TextMeshProUGUI healthTextShadow; // Optional shadow for better visibility
     [SerializeField] private bool showHealthText = true;
-    [SerializeField] private Color fullHealthColor = new Color(0f, 1f, 0f, 1f); // Bright green
-    [SerializeField] private Color lowHealthColor = new Color(1f, 0f, 0f, 1f); // Bright red
+    [SerializeField] private Color fullHealthColor = new Color(1f, 0f, 0f, 1f); // Red
+    [SerializeField] private Color lowHealthColor = new Color(1f, 0f, 0f, 1f); // Red (no color change)
     [SerializeField] private float lowHealthThreshold = 0.3f; // 30% health
+    
+    [Header("Development/Testing")]
+    [SerializeField] private bool useTestMode = false;
+    [SerializeField] private float testCurrentHealth = 2000f;
+    [SerializeField] private float testMaxHealth = 2000f;
     
     private PlayerHealth playerHealth;
     private Image healthBarImage;
@@ -26,7 +32,12 @@ public class HealthBarUI : MonoBehaviour
                 playerHealth = player.AddComponent<PlayerHealth>();
             }
             
-            playerHealth.OnHealthChanged += UpdateHealthBar;
+            // Only subscribe to health changes if not in test mode
+            if (!useTestMode)
+            {
+                playerHealth.OnHealthChanged += UpdateHealthBar;
+            }
+            
             InitializeHealthBar();
         }
         else
@@ -57,8 +68,8 @@ public class HealthBarUI : MonoBehaviour
         // Find health text component if not assigned
         if (showHealthText && healthText == null)
         {
-            Text[] texts = GetComponentsInChildren<Text>();
-            foreach (Text text in texts)
+            TextMeshProUGUI[] texts = GetComponentsInChildren<TextMeshProUGUI>();
+            foreach (TextMeshProUGUI text in texts)
             {
                 if (text.name == "HealthText" || text.name.Contains("HealthText"))
                 {
@@ -71,7 +82,53 @@ public class HealthBarUI : MonoBehaviour
             }
         }
         
-        UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+        if (useTestMode)
+        {
+            // Use test mode values
+            UpdateHealthBar(testCurrentHealth, testMaxHealth);
+        }
+        else
+        {
+            UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+        }
+    }
+    
+    void OnValidate()
+    {
+        // Update health bar in editor when test values change
+        if (useTestMode)
+        {
+            // Initialize components if needed
+            if (healthBarFill == null)
+            {
+                healthBarFill = GetComponentInChildren<Image>();
+            }
+            if (healthText == null && showHealthText)
+            {
+                TextMeshProUGUI[] texts = GetComponentsInChildren<TextMeshProUGUI>();
+                foreach (TextMeshProUGUI text in texts)
+                {
+                    if (text.name == "HealthText" || text.name.Contains("HealthText"))
+                    {
+                        healthText = text;
+                    }
+                    else if (text.name == "TextShadow" || text.name.Contains("Shadow"))
+                    {
+                        healthTextShadow = text;
+                    }
+                }
+            }
+            UpdateHealthBar(testCurrentHealth, testMaxHealth);
+        }
+    }
+    
+    void Update()
+    {
+        // Update test mode in play mode
+        if (useTestMode)
+        {
+            UpdateHealthBar(testCurrentHealth, testMaxHealth);
+        }
     }
     
     void UpdateHealthBar(float currentHealth, float maxHealth)
@@ -95,6 +152,7 @@ public class HealthBarUI : MonoBehaviour
         // Update health text if available
         if (showHealthText && healthText != null)
         {
+            // Display as "current / max"
             string healthString = $"{Mathf.CeilToInt(currentHealth)} / {Mathf.CeilToInt(maxHealth)}";
             healthText.text = healthString;
             

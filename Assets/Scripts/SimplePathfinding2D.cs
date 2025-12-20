@@ -36,7 +36,7 @@ public class SimplePathfinding2D : MonoBehaviour
     /// <summary>
     /// Checks if a path in the given direction is clear of obstacles.
     /// </summary>
-    private bool IsPathClear(Vector2 origin, Vector2 direction)
+    public bool IsPathClear(Vector2 origin, Vector2 direction)
     {
         RaycastHit2D hit = Physics2D.Raycast(origin, direction, raycastDistance, obstacleLayerMask);
         
@@ -134,3 +134,4 @@ public class SimplePathfinding2D : MonoBehaviour
         return hit.collider == null;
     }
 }
+

@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour
     private bool isHurt = false;
     private float previousHealth = 0f;
     private float hurtAnimationStartTime = 0f;
+    private bool hurtAnimationExists = true; // Cache whether hurt animation exists
+    private bool hurtAnimationWarningShown = false; // Track if we've already warned about missing animation
 
     public CoinManager coinManager;
 
@@ -35,10 +37,14 @@ public class PlayerController : MonoBehaviour
         if (rb == null)
         {
             rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0; // No gravity for top-down movement
-            rb.freezeRotation = true; // Prevent rotation
-            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // Better collision detection
         }
+        
+        // Configure Rigidbody2D for top-down movement
+        rb.gravityScale = 0; // No gravity for top-down movement
+        rb.freezeRotation = true; // Prevent rotation
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // Better collision detection
+        // Keep as Dynamic to use velocity-based movement
+        // We'll prevent enemy pushing via Physics2D.IgnoreCollision
 
         // Get SpriteRenderer component for flipping
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -52,6 +58,11 @@ public class PlayerController : MonoBehaviour
         if (animator == null)
         {
             Debug.LogWarning("Animator not found on Player. Animation will not work.");
+        }
+        else
+        {
+            // Check if hurt animation exists in the Animator Controller
+            CheckHurtAnimationExists();
         }
         
         // Get PlayerHealth component
@@ -80,6 +91,10 @@ public class PlayerController : MonoBehaviour
             Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
             boxCollider.size = spriteSize * colliderSizeScale;
         }
+        
+        // Prevent enemies from pushing player by ignoring collision with enemy colliders
+        // This allows enemies to detect player (via OverlapCircle) but not push them
+        IgnoreEnemyCollisions();
 
         // Setup Input System - use project-wide actions if available
         if (InputSystem.actions != null)
@@ -152,7 +167,12 @@ public class PlayerController : MonoBehaviour
                     if (timeSinceHurtStart > 0.2f)
                     {
                         // Been waiting too long, animation might not exist in animator
-                        Debug.LogWarning($"[Player] Hurt animation '{hurtAnimationName}' not found in Animator Controller");
+                        if (!hurtAnimationWarningShown)
+                        {
+                            Debug.LogWarning($"[Player] Hurt animation '{hurtAnimationName}' not found in Animator Controller. Hurt animation will be skipped.");
+                            hurtAnimationWarningShown = true;
+                            hurtAnimationExists = false; // Cache that it doesn't exist
+                        }
                         isHurt = false;
                         currentAnimationState = ""; // Reset to allow animation change
                     }
@@ -308,6 +328,12 @@ public class PlayerController : MonoBehaviour
     {
         if (animator == null) return;
         
+        // If we know the animation doesn't exist, skip it
+        if (!hurtAnimationExists)
+        {
+            return;
+        }
+        
         isHurt = true;
         hurtAnimationStartTime = Time.time;
         
@@ -316,6 +342,58 @@ public class PlayerController : MonoBehaviour
             animator.Play(hurtAnimationName, 0, 0f);
             currentAnimationState = hurtAnimationName;
             Debug.Log($"[Player] Playing hurt animation: {hurtAnimationName}");
+        }
+    }
+    
+    /// <summary>
+    /// Checks if the hurt animation exists in the Animator Controller.
+    /// Since we can't directly check state names, we'll verify when trying to play.
+    /// </summary>
+    private void CheckHurtAnimationExists()
+    {
+        if (animator == null || string.IsNullOrEmpty(hurtAnimationName))
+        {
+            hurtAnimationExists = false;
+            return;
+        }
+        
+        // We can't reliably check if a state exists without playing it
+        // So we'll assume it exists and verify when actually playing
+        // The Update() method will detect if it doesn't exist and cache the result
+        hurtAnimationExists = true;
+    }
+    
+    /// <summary>
+    /// Prevents enemies from pushing the player by ignoring collisions between player and enemy colliders.
+    /// Enemies can still detect the player via OverlapCircle for attack range.
+    /// </summary>
+    private void IgnoreEnemyCollisions()
+    {
+        if (boxCollider == null) return;
+        
+        // Find all enemies and ignore collision with their colliders
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            Collider2D enemyCollider = enemy.GetComponent<Collider2D>();
+            if (enemyCollider != null)
+            {
+                Physics2D.IgnoreCollision(boxCollider, enemyCollider, true);
+            }
+        }
+        
+        // Also set up to ignore collisions with enemies spawned later
+        // This will be handled by enemies when they spawn (they can call a method on player)
+    }
+    
+    /// <summary>
+    /// Called by enemies when they spawn to ignore collision with player.
+    /// </summary>
+    public void IgnoreCollisionWithEnemy(Collider2D enemyCollider)
+    {
+        if (boxCollider != null && enemyCollider != null)
+        {
+            Physics2D.IgnoreCollision(boxCollider, enemyCollider, true);
         }
     }
     

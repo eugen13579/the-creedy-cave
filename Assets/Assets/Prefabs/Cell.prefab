@@ -204,9 +204,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Highlight
       objectReference: {fileID: 0}
+    - target: {fileID: -2253911629886400664, guid: 75c910fc766dc486a8de6d5aecebe352, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3626916397498700004, guid: 75c910fc766dc486a8de6d5aecebe352, type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3626916397498700004, guid: 75c910fc766dc486a8de6d5aecebe352, type: 3}
       propertyPath: m_SortingOrder
