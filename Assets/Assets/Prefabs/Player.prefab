@@ -130,7 +130,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   moveSpeed: 5
-  colliderSizeScale: 0.8
   attackRange: 1.5
   attackCooldown: 1
   idleAnimationName: Idle
@@ -172,7 +171,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.05494404, y: 0.05076611}
+  m_Offset: {x: 0.036070228, y: -0.6661711}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5294118, y: 0.47619045}
@@ -182,7 +181,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.4615297, y: 1.8181522}
+  m_Size: {x: 1.3441589, y: 0.365309}
   m_EdgeRadius: 0
 --- !u!114 &855453171745920447
 MonoBehaviour:

@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] [Range(0.1f, 1f)] private float colliderSizeScale = 0.8f; // Scale down collider to fit through narrow passages
+    // [SerializeField] [Range(0.1f, 1f)] private float colliderSizeScale = 0.8f; // Scale down collider to fit through narrow passages
     [SerializeField] private float attackRange = 1.5f; // Distance to attack enemies
     [SerializeField] private float attackCooldown = 1.0f; // Time between attacks
     [SerializeField] private string idleAnimationName = "Idle";
@@ -86,11 +86,11 @@ public class PlayerController : MonoBehaviour
         }
         
         // Adjust collider size to be smaller than sprite for narrow passages
-        if (spriteRenderer != null && spriteRenderer.sprite != null)
-        {
-            Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
-            boxCollider.size = spriteSize * colliderSizeScale;
-        }
+        // if (spriteRenderer != null && spriteRenderer.sprite != null)
+        // {
+        //     Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
+        //     boxCollider.size = spriteSize * colliderSizeScale;
+        // }
         
         // Prevent enemies from pushing player by ignoring collision with enemy colliders
         // This allows enemies to detect player (via OverlapCircle) but not push them

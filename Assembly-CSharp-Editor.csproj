@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
     <BaseIntermediateOutputPath>Temp\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
@@ -49,6 +49,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Editor\HealthBarSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\EnemyHealthBarSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\EnemyItemDropperSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\EnemyHealthBarEditor.cs" />
+    <Compile Include="Assets\Scripts\Editor\EnemyItemDropperEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
