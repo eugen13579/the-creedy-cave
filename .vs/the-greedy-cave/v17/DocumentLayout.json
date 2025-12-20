@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\MSI\\the-greedy-cave\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F0945844-26FE-A612-6BDC-37AF104E5992}|Assembly-CSharp.csproj|c:\\users\\msi\\the-greedy-cave\\assets\\scripts\\menuparallax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0945844-26FE-A612-6BDC-37AF104E5992}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\menuparallax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MenuParallax.cs",
+              "DocumentMoniker": "C:\\Users\\MSI\\the-greedy-cave\\Assets\\Scripts\\MenuParallax.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\MenuParallax.cs",
+              "ToolTip": "C:\\Users\\MSI\\the-greedy-cave\\Assets\\Scripts\\MenuParallax.cs",
+              "RelativeToolTip": "Assets\\Scripts\\MenuParallax.cs",
+              "ViewState": "AQIAABIAAAAAAAAAAAA1wC8AAAASAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-19T13:31:19.641Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
