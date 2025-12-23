@@ -8,18 +8,41 @@ public class EnemyController : MonoBehaviour
 {
     #region Serialized Fields
 
-    [SerializeField] private float detectionRange = 10f;
-    [SerializeField] private float chaseSpeed = 4f;
-    [SerializeField] private float attackRange = 1.5f;
-    [SerializeField] private float attackCooldown = 1.5f;
-    [SerializeField] private string idleAnimationName = "Idle";
-    [SerializeField] private string walkAnimationName = "Walk";
-    [SerializeField] private string attack01AnimationName = "attack01";
-    [SerializeField] private string attack02AnimationName = "attack02";
-    [SerializeField] private string hurtAnimationName = "hurt";
-    [SerializeField] private string deathAnimationName = "death";
-    [SerializeField] private bool enableDebugLogs = true;
-    [SerializeField] private bool usePathfinding = true;
+    [SerializeField]
+    private float detectionRange = 10f;
+
+    [SerializeField]
+    private float chaseSpeed = 4f;
+
+    [SerializeField]
+    private float attackRange = 1.5f;
+
+    [SerializeField]
+    private float attackCooldown = 1.5f;
+
+    [SerializeField]
+    private string idleAnimationName = "Idle";
+
+    [SerializeField]
+    private string walkAnimationName = "Walk";
+
+    [SerializeField]
+    private string attack01AnimationName = "attack01";
+
+    [SerializeField]
+    private string attack02AnimationName = "attack02";
+
+    [SerializeField]
+    private string hurtAnimationName = "hurt";
+
+    [SerializeField]
+    private string deathAnimationName = "death";
+
+    [SerializeField]
+    private bool enableDebugLogs = true;
+
+    [SerializeField]
+    private bool usePathfinding = true;
 
     #endregion
 
@@ -53,7 +76,8 @@ public class EnemyController : MonoBehaviour
 
     void Update()
     {
-        if (context.PlayerTransform == null || context.SpriteRenderer == null) return;
+        if (context.PlayerTransform == null || context.SpriteRenderer == null)
+            return;
 
         // Don't process if dead
         if (context.IsDead)
@@ -65,25 +89,38 @@ public class EnemyController : MonoBehaviour
         }
 
         // Handle hurt animation completion
-        bool stillHurt = animationController.HandleHurtAnimation(context.IsHurt, context.HurtAnimationStartTime);
+        bool stillHurt = animationController.HandleHurtAnimation(
+            context.IsHurt,
+            context.HurtAnimationStartTime
+        );
         context.IsHurt = stillHurt;
 
         // Don't process behavior tree if hurt (let animation play)
         if (context.IsHurt)
         {
-            animationController.UpdateAnimation(context.IsDead, context.IsHurt, context.IsAttacking, context.Movement);
+            animationController.UpdateAnimation(
+                context.IsDead,
+                context.IsHurt,
+                context.IsAttacking,
+                context.Movement
+            );
             return;
         }
 
         // Update cached distance for debug display
-        context.DistanceToPlayer = EnemyRangeDetector.GetDistanceToPlayer(transform.position, context.PlayerTransform);
+        context.DistanceToPlayer = EnemyRangeDetector.GetDistanceToPlayer(
+            transform.position,
+            context.PlayerTransform
+        );
 
         // Debug logging
         if (enableDebugLogs && Time.frameCount % EnemyConstants.DEBUG_LOG_FRAME_INTERVAL == 0)
         {
-            Debug.Log($"[Enemy {gameObject.name}] Distance={context.DistanceToPlayer:F2}, Range={detectionRange}, " +
-                      $"isChasing={context.IsChasing}, movement={context.Movement}, " +
-                      $"RB.velocity={context.Rigidbody?.linearVelocity}");
+            Debug.Log(
+                $"[Enemy {gameObject.name}] Distance={context.DistanceToPlayer:F2}, Range={detectionRange}, "
+                    + $"isChasing={context.IsChasing}, movement={context.Movement}, "
+                    + $"RB.velocity={context.Rigidbody?.linearVelocity}"
+            );
         }
 
         // Execute behavior tree
@@ -93,25 +130,34 @@ public class EnemyController : MonoBehaviour
         }
 
         // Update animation based on movement and state
-        animationController.UpdateAnimation(context.IsDead, context.IsHurt, context.IsAttacking, context.Movement);
+        animationController.UpdateAnimation(
+            context.IsDead,
+            context.IsHurt,
+            context.IsAttacking,
+            context.Movement
+        );
     }
 
     void FixedUpdate()
     {
         // Apply movement in FixedUpdate
-        if (context.Rigidbody == null) return;
+        if (context.Rigidbody == null)
+            return;
 
         if (context.Movement.magnitude > EnemyConstants.MOVEMENT_THRESHOLD)
         {
             // Use MovePosition for kinematic rigidbodies (prevents pushing player)
             // For kinematic bodies, MovePosition is the correct way to move
-            Vector2 newPosition = (Vector2)transform.position + context.Movement * chaseSpeed * Time.fixedDeltaTime;
+            Vector2 newPosition =
+                (Vector2)transform.position + context.Movement * chaseSpeed * Time.fixedDeltaTime;
             context.Rigidbody.MovePosition(newPosition);
 
             if (enableDebugLogs && Time.frameCount % EnemyConstants.DEBUG_LOG_FRAME_INTERVAL == 0)
             {
-                Debug.Log($"[Enemy {gameObject.name}] FixedUpdate: movement={context.Movement}, " +
-                          $"speed={chaseSpeed}, position={transform.position}");
+                Debug.Log(
+                    $"[Enemy {gameObject.name}] FixedUpdate: movement={context.Movement}, "
+                        + $"speed={chaseSpeed}, position={transform.position}"
+                );
             }
         }
         // No need to set velocity to zero for kinematic bodies - they don't use velocity
@@ -154,23 +200,24 @@ public class EnemyController : MonoBehaviour
             Movement = Vector2.zero,
             LastMovementDirection = Vector2.zero,
             CurrentAnimationState = "",
-            
+
             // Oscillation detection
             IsOscillating = false,
             OscillationDetectionStartTime = 0f,
             HorizontalDirectionChanges = 0,
-            LastHorizontalDirection = 0f
+            LastHorizontalDirection = 0f,
         };
     }
 
     private void InitializePlayer()
     {
         context.PlayerTransform = EnemyPlayerFinder.FindPlayer(enableDebugLogs);
-        
+
         // Ignore collision with player to prevent pushing
         if (context.PlayerTransform != null)
         {
-            PlayerController playerController = context.PlayerTransform.GetComponent<PlayerController>();
+            PlayerController playerController =
+                context.PlayerTransform.GetComponent<PlayerController>();
             if (playerController != null)
             {
                 Collider2D enemyCollider = GetComponent<Collider2D>();
@@ -256,10 +303,7 @@ public class EnemyController : MonoBehaviour
         );
 
         // Attack selector: Continue existing attack OR start new attack
-        BTSelector attackSelector = new BTSelector(
-            continueAttackSequence,
-            newAttackSequence
-        );
+        BTSelector attackSelector = new BTSelector(continueAttackSequence, newAttackSequence);
 
         // When player is in attack range but can't attack (cooldown), stop movement and face player
         BTSequence waitInAttackRangeSequence = new BTSequence(
@@ -308,7 +352,8 @@ public class EnemyController : MonoBehaviour
 
     private void OnDeath()
     {
-        if (context.IsDead) return; // Already dead
+        if (context.IsDead)
+            return; // Already dead
 
         context.IsDead = true;
 
@@ -335,12 +380,13 @@ public class EnemyController : MonoBehaviour
 
     private void PlayHurtAnimation()
     {
-        if (components.Animator == null || context.IsDead) return;
+        if (components.Animator == null || context.IsDead)
+            return;
 
         context.IsHurt = true;
         context.HurtAnimationStartTime = Time.time;
         context.Movement = Vector2.zero; // Stop movement during hurt animation
-        
+
         // Reset attack state when hurt animation interrupts attack
         if (context.IsAttacking)
         {

@@ -589,7 +589,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -2253911629886400664, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_Name
-      value: Vampire
+      value: Slime
       objectReference: {fileID: 0}
     - target: {fileID: -2253911629886400664, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_TagString
@@ -605,7 +605,7 @@ PrefabInstance:
       objectReference: {fileID: -8037020906130177882, guid: 19e058118c06b45199a2a118fb1847cb, type: 3}
     - target: {fileID: 3626916397498700004, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3626916397498700004, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_SortingLayerID
