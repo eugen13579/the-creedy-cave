@@ -23,6 +23,22 @@ public class EnemyHealthBar : MonoBehaviour
     private RectTransform canvasRect;
     private Camera mainCamera;
     
+    void Awake()
+    {
+        // Get EnemyHealth component early and subscribe to events
+        // This ensures we catch all events, including the one fired in EnemyHealth.Start()
+        enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnHealthChanged += UpdateHealthBar;
+            enemyHealth.OnDeath += OnEnemyDeath;
+        }
+        else
+        {
+            Debug.LogWarning($"[EnemyHealthBar] {gameObject.name}: EnemyHealth component not found in Awake(). Health bar will not work.");
+        }
+    }
+    
     void Start()
     {
         // Check if health bar canvas already exists (created in editor)
@@ -39,6 +55,13 @@ public class EnemyHealthBar : MonoBehaviour
                 healthText = existingCanvas.Find("HealthText")?.GetComponent<TextMeshProUGUI>();
                 healthTextShadow = existingCanvas.Find("TextShadow")?.GetComponent<TextMeshProUGUI>();
                 
+                // Ensure Fill Image is configured correctly
+                if (healthBarFill != null)
+                {
+                    healthBarFill.type = Image.Type.Filled;
+                    healthBarFill.fillMethod = Image.FillMethod.Horizontal;
+                }
+                
                 // Update camera reference
                 mainCamera = Camera.main;
                 if (mainCamera == null)
@@ -50,39 +73,26 @@ public class EnemyHealthBar : MonoBehaviour
                     healthBarCanvas.worldCamera = mainCamera;
                 }
                 
-                Debug.Log($"[EnemyHealthBar] Reusing existing health bar canvas for {gameObject.name}");
+                // Set sorting layer to UI
+                healthBarCanvas.sortingLayerName = "UI";
                 
-                // Subscribe to health events
-                enemyHealth = GetComponent<EnemyHealth>();
-                if (enemyHealth != null)
+                // Initial update
+                if (healthBarCanvas != null)
                 {
-                    enemyHealth.OnHealthChanged += UpdateHealthBar;
-                    enemyHealth.OnDeath += OnEnemyDeath;
-                    
-                    // Initial update
-                    if (healthBarCanvas != null)
-                    {
-                        healthBarCanvas.gameObject.SetActive(true);
-                    }
+                    healthBarCanvas.gameObject.SetActive(true);
+                }
+                if (enemyHealth != null && healthBarFill != null)
+                {
                     UpdateHealthBar(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
-                    
-                    if (alwaysShowForTesting && healthBarCanvas != null)
-                    {
-                        healthBarCanvas.gameObject.SetActive(true);
-                    }
+                }
+                
+                if (alwaysShowForTesting && healthBarCanvas != null)
+                {
+                    healthBarCanvas.gameObject.SetActive(true);
                 }
                 
                 return; // Skip creating new canvas
             }
-        }
-        
-        // Get EnemyHealth component
-        enemyHealth = GetComponent<EnemyHealth>();
-        if (enemyHealth == null)
-        {
-            Debug.LogWarning($"EnemyHealthBar on {gameObject.name}: EnemyHealth component not found. Health bar will not work.");
-            enabled = false;
-            return;
         }
         
         // Get main camera
@@ -102,10 +112,6 @@ public class EnemyHealthBar : MonoBehaviour
         // Create new health bar UI (only if we didn't reuse existing one above)
         CreateHealthBar();
         
-        // Subscribe to health events
-        enemyHealth.OnHealthChanged += UpdateHealthBar;
-        enemyHealth.OnDeath += OnEnemyDeath;
-        
         // Initial update - force show initially
         // Make sure canvas is visible before first update
         if (healthBarCanvas != null)
@@ -114,16 +120,16 @@ public class EnemyHealthBar : MonoBehaviour
         }
         
         // Force update to ensure visibility
-        UpdateHealthBar(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+        if (enemyHealth != null)
+        {
+            UpdateHealthBar(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+        }
         
         // If alwaysShowForTesting is true, ensure it's visible
         if (alwaysShowForTesting && healthBarCanvas != null)
         {
             healthBarCanvas.gameObject.SetActive(true);
         }
-        
-        // Debug: Log health bar creation
-        Debug.Log($"[EnemyHealthBar] Health bar ready for {gameObject.name}. Health: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}, HideWhenFull: {hideWhenFullHealth}, AlwaysShow: {alwaysShowForTesting}, CanvasActive: {healthBarCanvas?.gameObject.activeSelf}, CanvasPosition: {healthBarCanvas?.transform.position}");
     }
     
     void CreateHealthBar()
@@ -147,6 +153,7 @@ public class EnemyHealthBar : MonoBehaviour
         healthBarCanvas = canvasObj.AddComponent<Canvas>();
         healthBarCanvas.renderMode = RenderMode.WorldSpace;
         healthBarCanvas.worldCamera = mainCamera;
+        healthBarCanvas.sortingLayerName = "UI";
         healthBarCanvas.sortingOrder = 10; // Ensure it renders above other elements
         
         // For world-space Canvas, we don't need CanvasScaler - it can interfere
@@ -314,7 +321,25 @@ public class EnemyHealthBar : MonoBehaviour
     
     void UpdateHealthBar(float currentHealth, float maxHealth)
     {
-        if (healthBarFill == null || enemyHealth == null || healthBarCanvas == null) return;
+        // Attempt to re-find components if they're null (for edge cases)
+        if (healthBarFill == null && healthBarCanvas != null)
+        {
+            Transform fillTransform = healthBarCanvas.transform.Find("Background/Fill");
+            if (fillTransform != null)
+            {
+                healthBarFill = fillTransform.GetComponent<Image>();
+                if (healthBarFill != null)
+                {
+                    healthBarFill.type = Image.Type.Filled;
+                    healthBarFill.fillMethod = Image.FillMethod.Horizontal;
+                }
+            }
+        }
+        
+        if (healthBarFill == null || enemyHealth == null || healthBarCanvas == null)
+        {
+            return;
+        }
         
         // Calculate fill amount
         float fillAmount = maxHealth > 0 ? currentHealth / maxHealth : 0f;
@@ -503,4 +528,5 @@ public class EnemyHealthBar : MonoBehaviour
         }
     }
 }
+
 
