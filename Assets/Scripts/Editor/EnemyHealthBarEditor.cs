@@ -154,6 +154,7 @@ public class EnemyHealthBarEditor : Editor
         Canvas canvas = canvasObj.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         canvas.worldCamera = mainCamera;
+        canvas.sortingLayerName = "UI";
         canvas.sortingOrder = 10;
         
         canvasObj.AddComponent<GraphicRaycaster>();
@@ -238,7 +239,7 @@ public class EnemyHealthBarEditor : Editor
             TextMeshProUGUI shadowText = shadowObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) shadowText.font = defaultFont;
             shadowText.text = $"{Mathf.CeilToInt(currentHealth)} / {Mathf.CeilToInt(maxHealth)}";
-            shadowText.fontSize = 240;
+            shadowText.fontSize = 12;
             shadowText.color = new Color(0f, 0f, 0f, 0.8f);
             shadowText.alignment = TextAlignmentOptions.Center;
             shadowText.fontStyle = FontStyles.Bold;
@@ -256,7 +257,7 @@ public class EnemyHealthBarEditor : Editor
             TextMeshProUGUI healthText = textObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) healthText.font = defaultFont;
             healthText.text = $"{Mathf.CeilToInt(currentHealth)} / {Mathf.CeilToInt(maxHealth)}";
-            healthText.fontSize = 240;
+            healthText.fontSize = 12;
             healthText.color = Color.white;
             healthText.alignment = TextAlignmentOptions.Center;
             healthText.fontStyle = FontStyles.Bold;
@@ -384,3 +385,4 @@ public class EnemyHealthBarEditor : Editor
         Debug.Log($"Updated {allHealthBars.Length} preview health bars.");
     }
 }
+

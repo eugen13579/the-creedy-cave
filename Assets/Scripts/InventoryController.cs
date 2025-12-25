@@ -23,6 +23,9 @@ public class InventoryController : MonoBehaviour
     private CellController selectedCell;
     private WeaponData[] items;
     
+    // Public property to access weapon cell
+    public CellController WeaponCell => weaponCell;
+    
     void Awake()
     {
         Instance = this;
@@ -107,6 +110,12 @@ public class InventoryController : MonoBehaviour
 
     void GenerateGrid()
     {
+        // Prevent duplicate cells if grid already exists
+        if (gridContainer != null && gridContainer.childCount > 0)
+        {
+            return;
+        }
+        
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < columns; col++)
@@ -156,13 +165,60 @@ public class InventoryController : MonoBehaviour
 
     public bool AddItem(WeaponData weapon)
     {
+        if (weapon == null)
+        {
+            Debug.LogWarning("InventoryController: Cannot add null weapon!");
+            return false;
+        }
+        
+        if (gridContainer == null)
+        {
+            Debug.LogError("InventoryController: gridContainer is null! Make sure gridContainer is assigned.");
+            return false;
+        }
+        
+        // Ensure grid is generated if it hasn't been yet (in case Awake didn't run)
+        if (items == null || items.Length == 0)
+        {
+            if (gridContainer.childCount == 0)
+            {
+                Debug.LogWarning("InventoryController: Grid not generated yet. Generating now...");
+                items = new WeaponData[rows * columns];
+                GenerateGrid();
+            }
+            else
+            {
+                // Grid exists but items array wasn't initialized
+                items = new WeaponData[rows * columns];
+            }
+        }
+        
         for (int i = 0; i < items.Length; i++)
         {
             if (items[i] == null)
             {
                 items[i] = weapon;
-                var cell = gridContainer.GetChild(i).GetComponent<CellController>();
-                cell.SetItem(weapon);
+                
+                // Check if cell exists
+                if (i < gridContainer.childCount)
+                {
+                    var cell = gridContainer.GetChild(i).GetComponent<CellController>();
+                    if (cell != null)
+                    {
+                        cell.SetItem(weapon);
+                        return true;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"InventoryController: Cell at index {i} doesn't have CellController component!");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"InventoryController: Cell at index {i} doesn't exist in gridContainer!");
+                }
+                
+                // If we got here, something went wrong but we already set items[i]
                 return true;
             }
         }

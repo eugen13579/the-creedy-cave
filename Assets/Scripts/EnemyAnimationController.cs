@@ -15,6 +15,7 @@ public class EnemyAnimationController
     private string hurtAnimationName;
     private string deathAnimationName;
     private bool enableDebugLogs;
+    private bool deathAnimationFinished = false;
 
     public EnemyAnimationController(
         Animator animator,
@@ -152,7 +153,70 @@ public class EnemyAnimationController
     public void PlayDeathAnimation()
     {
         if (animator == null) return;
+        deathAnimationFinished = false;
         PlayAnimation(deathAnimationName);
+        // Ensure animation doesn't loop
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[EnemyAnimationController] Playing death animation: {deathAnimationName}");
+        }
+    }
+
+    /// <summary>
+    /// Handles death animation to ensure it plays once and stops at the final frame.
+    /// </summary>
+    public void HandleDeathAnimation()
+    {
+        if (animator == null || string.IsNullOrEmpty(deathAnimationName)) return;
+
+        // If death animation has finished, continuously keep it at the final frame
+        if (deathAnimationFinished)
+        {
+            // Continuously set to final frame to prevent any transitions
+            animator.Play(deathAnimationName, 0, 1.0f);
+            return;
+        }
+
+        // If animator is disabled, mark as finished and re-enable to set final frame
+        if (!animator.enabled)
+        {
+            animator.enabled = true;
+            animator.Play(deathAnimationName, 0, 1.0f);
+            deathAnimationFinished = true;
+            return;
+        }
+
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        bool isDeathAnim = stateInfo.IsName(deathAnimationName);
+
+        if (isDeathAnim)
+        {
+            // If animation has reached the end, mark as finished and set to final frame
+            if (stateInfo.normalizedTime >= 1.0f)
+            {
+                deathAnimationFinished = true;
+                // Set to final frame
+                animator.Play(deathAnimationName, 0, 1.0f);
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[EnemyAnimationController] Death animation finished, locking at final frame");
+                }
+            }
+        }
+        else
+        {
+            // If not in death animation state, check if we should force it
+            // Only force if we haven't finished yet (to avoid resetting to first frame)
+            if (!deathAnimationFinished)
+            {
+                animator.Play(deathAnimationName, 0, 0f);
+            }
+            else
+            {
+                // Already finished, keep at final frame
+                animator.Play(deathAnimationName, 0, 1.0f);
+            }
+        }
     }
 
     /// <summary>
@@ -213,4 +277,5 @@ public class EnemyAnimationController
         return stateInfo.IsName(animationName) && stateInfo.normalizedTime >= 1.0f;
     }
 }
+
 

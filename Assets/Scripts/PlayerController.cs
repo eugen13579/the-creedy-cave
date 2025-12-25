@@ -7,10 +7,14 @@ public class PlayerController : MonoBehaviour
     // [SerializeField] [Range(0.1f, 1f)] private float colliderSizeScale = 0.8f; // Scale down collider to fit through narrow passages
     [SerializeField] private float attackRange = 1.5f; // Distance to attack enemies
     [SerializeField] private float attackCooldown = 1.0f; // Time between attacks
+    [SerializeField] private float rangedAttackCooldown = 0.5f; // Time between ranged attacks
     [SerializeField] private string idleAnimationName = "Idle";
     [SerializeField] private string walkAnimationName = "Walk";
     [SerializeField] private string attack01AnimationName = "Attack01";
+    [SerializeField] private string attack03AnimationName = "Attack03"; // Ranged attack animation
     [SerializeField] private string hurtAnimationName = "Hurt";
+    [SerializeField] private float footstepCooldown = 0.3f; // Time between footstep sounds
+    [SerializeField] private Sprite arrowSprite; // Arrow sprite to use for projectiles
     
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
@@ -19,14 +23,19 @@ public class PlayerController : MonoBehaviour
     private InputAction moveAction;
     private InputAction attackAction;
     private PlayerHealth playerHealth;
+    private AudioSource audioSource;
+    private AudioClip[] footstepClips;
     private string currentAnimationState = "";
     private float lastAttackTime = 0f;
+    private float lastRangedAttackTime = 0f;
+    private float lastFootstepTime = 0f;
     private bool isAttacking = false;
     private bool isHurt = false;
     private float previousHealth = 0f;
     private float hurtAnimationStartTime = 0f;
     private bool hurtAnimationExists = true; // Cache whether hurt animation exists
     private bool hurtAnimationWarningShown = false; // Track if we've already warned about missing animation
+    private Vector2 lastMovementDirection = Vector2.right; // Track last movement direction for arrow firing
 
     public CoinManager coinManager;
 
@@ -78,6 +87,34 @@ public class PlayerController : MonoBehaviour
             playerHealth.OnHealthChanged += OnHealthChanged;
         }
 
+        // Get or add AudioSource component for footstep sounds
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+
+        // Load footstep sound clips
+        #if UNITY_EDITOR
+        footstepClips = new AudioClip[]
+        {
+            UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Assets/Sound/16_human_walk_stone_1.wav"),
+            UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Assets/Sound/16_human_walk_stone_2.wav"),
+            UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Assets/Sound/16_human_walk_stone_3.wav")
+        };
+        #else
+        // At runtime, load from Resources folder (files need to be moved to Resources/Assets/Sound/ for this to work)
+        // Alternatively, assign clips in inspector via SerializeField
+        footstepClips = new AudioClip[]
+        {
+            Resources.Load<AudioClip>("Assets/Sound/16_human_walk_stone_1"),
+            Resources.Load<AudioClip>("Assets/Sound/16_human_walk_stone_2"),
+            Resources.Load<AudioClip>("Assets/Sound/16_human_walk_stone_3")
+        };
+        #endif
+
         // Get or add BoxCollider2D and adjust size for narrow passages
         boxCollider = GetComponent<BoxCollider2D>();
         if (boxCollider == null)
@@ -124,10 +161,27 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Handle attack input (J key)
+        // Handle melee attack input (J key)
         if (Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
         {
-            AttackNearbyEnemies();
+            // Check if bow is equipped - if so, use ranged attack instead
+            if (IsBowEquipped())
+            {
+                FireArrow();
+            }
+            else
+            {
+                AttackNearbyEnemies();
+            }
+        }
+        
+        // Handle ranged attack input (R key) - alternative input for ranged attack
+        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            if (IsBowEquipped())
+            {
+                FireArrow();
+            }
         }
         
         // Handle hurt animation completion
@@ -200,8 +254,29 @@ public class PlayerController : MonoBehaviour
         // Read movement input
         Vector2 moveInput = moveAction.ReadValue<Vector2>();
         
+        // Update last movement direction for arrow firing
+        if (moveInput.magnitude > 0.1f)
+        {
+            lastMovementDirection = moveInput.normalized;
+        }
+        
         // Check if player is moving
         bool isMoving = moveInput.magnitude > 0.1f;
+        
+        // Play footstep sounds when moving
+        if (isMoving && !isHurt && !isAttacking && audioSource != null && footstepClips != null && footstepClips.Length > 0)
+        {
+            if (Time.time - lastFootstepTime >= footstepCooldown)
+            {
+                // Pick a random footstep sound
+                AudioClip randomFootstep = footstepClips[Random.Range(0, footstepClips.Length)];
+                if (randomFootstep != null)
+                {
+                    audioSource.PlayOneShot(randomFootstep);
+                    lastFootstepTime = Time.time;
+                }
+            }
+        }
         
         // Play appropriate animation and ensure it loops (even if Animation Clip doesn't have loop enabled)
         if (animator != null)
@@ -217,7 +292,7 @@ public class PlayerController : MonoBehaviour
             {
                 // Check if attack animation has finished
                 AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-                if (stateInfo.IsName(attack01AnimationName))
+                if (stateInfo.IsName(attack01AnimationName) || stateInfo.IsName(attack03AnimationName))
                 {
                     if (stateInfo.normalizedTime >= 1.0f)
                     {
@@ -444,5 +519,152 @@ public class PlayerController : MonoBehaviour
         {
             lastAttackTime = Time.time;
         }
+    }
+    
+    /// <summary>
+    /// Checks if the bow is currently equipped.
+    /// </summary>
+    /// <returns>True if bow is equipped</returns>
+    private bool IsBowEquipped()
+    {
+        if (InventoryController.Instance == null)
+        {
+            return false;
+        }
+        
+        // Get weapon cell from InventoryController
+        CellController weaponCell = InventoryController.Instance.WeaponCell;
+        if (weaponCell == null)
+        {
+            // Try to get from weaponCellGameObject
+            if (InventoryController.Instance.weaponCellGameObject != null)
+            {
+                weaponCell = InventoryController.Instance.weaponCellGameObject.GetComponent<CellController>();
+            }
+        }
+        
+        if (weaponCell == null)
+        {
+            // Try to find weapon cell by name
+            GameObject weaponCellObj = GameObject.Find("WeaponCell");
+            if (weaponCellObj != null)
+            {
+                weaponCell = weaponCellObj.GetComponent<CellController>();
+            }
+        }
+        
+        if (weaponCell != null && weaponCell.currentItem != null)
+        {
+            // Check if equipped weapon is the bow (by name)
+            return weaponCell.currentItem.weaponName == "Bow";
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Fires an arrow projectile toward the mouse cursor.
+    /// </summary>
+    private void FireArrow()
+    {
+        // Check cooldown
+        if (Time.time - lastRangedAttackTime < rangedAttackCooldown)
+        {
+            return;
+        }
+        
+        // Check if player has arrows
+        if (ArrowInventory.Instance == null)
+        {
+            Debug.LogWarning("ArrowInventory not found! Cannot fire arrow.");
+            return;
+        }
+        
+        if (!ArrowInventory.Instance.HasArrows())
+        {
+            Debug.Log("No arrows available!");
+            return;
+        }
+        
+        // Use an arrow
+        if (!ArrowInventory.Instance.UseArrow())
+        {
+            return;
+        }
+        
+        if (playerHealth == null) return;
+        
+        // Play Attack03 animation
+        if (animator != null)
+        {
+            animator.Play(attack03AnimationName, 0, 0f);
+            currentAnimationState = attack03AnimationName;
+            isAttacking = true;
+        }
+        
+        // Calculate direction based on player's facing direction
+        Vector2 direction;
+        
+        // Use current movement direction if moving
+        if (moveAction != null)
+        {
+            Vector2 moveInput = moveAction.ReadValue<Vector2>();
+            if (moveInput.magnitude > 0.1f)
+            {
+                // Player is moving - use movement direction
+                direction = moveInput.normalized;
+            }
+            else
+            {
+                // Player is not moving - use last movement direction or sprite facing
+                if (lastMovementDirection.magnitude > 0.1f)
+                {
+                    direction = lastMovementDirection;
+                }
+                else if (spriteRenderer != null)
+                {
+                    // Fall back to sprite facing direction (left or right)
+                    direction = spriteRenderer.flipX ? Vector2.left : Vector2.right;
+                }
+                else
+                {
+                    // Default to right if nothing else available
+                    direction = Vector2.right;
+                }
+            }
+        }
+        else
+        {
+            // No move action - use sprite facing or default
+            if (spriteRenderer != null)
+            {
+                direction = spriteRenderer.flipX ? Vector2.left : Vector2.right;
+            }
+            else
+            {
+                direction = lastMovementDirection.magnitude > 0.1f ? lastMovementDirection : Vector2.right;
+            }
+        }
+        
+        // Create arrow GameObject dynamically
+        GameObject arrowObj = new GameObject("Arrow");
+        arrowObj.transform.position = transform.position;
+        arrowObj.tag = "Arrow";
+        
+        // Add ArrowProjectile component
+        ArrowProjectile arrow = arrowObj.AddComponent<ArrowProjectile>();
+        
+        // Initialize arrow with direction, damage, and sprite
+        if (arrow != null)
+        {
+            arrow.Initialize(direction, playerHealth.AttackDamage, arrowSprite);
+        }
+        else
+        {
+            Debug.LogError("ArrowProjectile component not found on arrow GameObject!");
+        }
+        
+        lastRangedAttackTime = Time.time;
+        Debug.Log($"Fired arrow! Direction: {direction}, Remaining arrows: {ArrowInventory.Instance.GetArrowCount()}");
     }
 }

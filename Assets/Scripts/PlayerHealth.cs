@@ -15,6 +15,8 @@ public class PlayerHealth : MonoBehaviour
     public float AttackDamage => attackDamage;
     
     private bool isDead = false;
+    private AudioSource audioSource;
+    private AudioClip damageSound;
     
     void Start()
     {
@@ -26,6 +28,24 @@ public class PlayerHealth : MonoBehaviour
         {
             DamageNumberManager.Instance.SubscribeToPlayer(this);
         }
+
+        // Get or add AudioSource component for damage sound
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+
+        // Load damage sound clip
+        #if UNITY_EDITOR
+        damageSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Assets/Sound/11_human_damage_1.wav");
+        #else
+        // At runtime, load from Resources folder (file needs to be moved to Resources/Assets/Sound/ for this to work)
+        // Alternatively, assign clip in inspector via SerializeField
+        damageSound = Resources.Load<AudioClip>("Assets/Sound/11_human_damage_1");
+        #endif
     }
     
     void OnEnable()
@@ -49,6 +69,12 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage(float damage)
     {
         if (isDead) return; // Không nhận damage nếu đã chết
+        
+        // Play damage sound
+        if (audioSource != null && damageSound != null)
+        {
+            audioSource.PlayOneShot(damageSound);
+        }
         
         currentHealth = Mathf.Max(0, currentHealth - damage);
         OnDamageTaken?.Invoke(this, damage);
