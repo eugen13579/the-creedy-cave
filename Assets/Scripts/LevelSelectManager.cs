@@ -43,7 +43,7 @@ public class LevelSelectManager : MonoBehaviour
         // Auto-find back button nếu chưa được gán
         if (backButton == null)
         {
-            Button[] buttons = FindObjectsOfType<Button>();
+            Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
             foreach (Button btn in buttons)
             {
                 if (btn.name.ToLower().Contains("back") || btn.name.ToLower().Contains("menu"))
@@ -74,7 +74,7 @@ public class LevelSelectManager : MonoBehaviour
             // Nếu button chưa được gán, tìm button có tên chứa level name hoặc số thứ tự
             if (level.levelButton == null)
             {
-                Button[] buttons = FindObjectsOfType<Button>();
+                Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
                 foreach (Button btn in buttons)
                 {
                     string btnName = btn.name.ToLower();

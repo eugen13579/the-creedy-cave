@@ -28,7 +28,7 @@ public class MenuManager : MonoBehaviour
         // Auto-find buttons nếu chưa được gán
         if (playButton == null)
         {
-            Button[] buttons = FindObjectsOfType<Button>();
+            Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
             foreach (Button btn in buttons)
             {
                 if (btn.name.ToLower().Contains("play") || btn.name.ToLower().Contains("start"))
@@ -41,7 +41,7 @@ public class MenuManager : MonoBehaviour
         
         if (quitButton == null)
         {
-            Button[] buttons = FindObjectsOfType<Button>();
+            Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
             foreach (Button btn in buttons)
             {
                 if (btn.name.ToLower().Contains("quit") || btn.name.ToLower().Contains("exit"))

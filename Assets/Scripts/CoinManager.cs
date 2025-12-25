@@ -23,4 +23,19 @@ public class CoinManager : MonoBehaviour
     {
         coinCount++;
     }
+    
+    /// <summary>
+    /// Attempts to spend coins. Returns true if successful, false if insufficient coins.
+    /// </summary>
+    /// <param name="amount">Amount of coins to spend</param>
+    /// <returns>True if coins were spent successfully, false if insufficient coins</returns>
+    public bool SpendCoins(int amount)
+    {
+        if (coinCount >= amount)
+        {
+            coinCount -= amount;
+            return true;
+        }
+        return false;
+    }
 }

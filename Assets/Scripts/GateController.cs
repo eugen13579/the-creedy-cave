@@ -15,7 +15,6 @@ public class GateController : MonoBehaviour
     
     [Header("UI Prompt")]
     [SerializeField] private GameObject pressEPromptUI; // TextMeshPro UI hiển thị "Press E"
-    [SerializeField] private string promptText = "Press E";
     
     private bool isPlayerNearby = false;
     private GameObject player;
@@ -133,7 +132,7 @@ public class GateController : MonoBehaviour
     {
         // Tìm trong HUDCanvas trước
         Canvas hudCanvas = null;
-        Canvas[] allCanvases = FindObjectsOfType<Canvas>();
+        Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
         foreach (Canvas c in allCanvases)
         {
             if (c.name == "HUDCanvas" || c.name == "HUD")
@@ -156,7 +155,7 @@ public class GateController : MonoBehaviour
         }
         
         // Fallback: Tìm trong toàn bộ scene
-        TextMeshProUGUI[] textComponents = FindObjectsOfType<TextMeshProUGUI>();
+        TextMeshProUGUI[] textComponents = FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None);
         foreach (TextMeshProUGUI text in textComponents)
         {
             if (text.name.Contains("PressE") || text.name.Contains("Press E") || 
