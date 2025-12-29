@@ -24,3 +24,4 @@ public class ItemDropData : ScriptableObject
     [Tooltip("Coin value (optional, only used when Item Type is Coin)")]
     public int coinValue = 1;
 }
+

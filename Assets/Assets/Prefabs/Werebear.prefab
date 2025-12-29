@@ -798,7 +798,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyItemDropper
   possibleDrops:
-  - {fileID: 11400000, guid: 39aaf67726df04fac93182e8ec978d36, type: 2}
   - {fileID: 11400000, guid: a9cbaf69444174b12889246009035e7f, type: 2}
   spawnOffsetRange: 0.5
   coinPrefab: {fileID: 4462004597297847743, guid: b0d3e04bd06bc4743812ae9c40775d79, type: 3}

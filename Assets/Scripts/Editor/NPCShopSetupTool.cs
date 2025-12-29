@@ -181,7 +181,7 @@ public class NPCShopSetupTool : EditorWindow
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
         panelRect.anchoredPosition = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(600, 400);
+        panelRect.sizeDelta = new Vector2(600, 500);
         
         // Add background image
         Image panelImage = panel.AddComponent<Image>();
@@ -234,6 +234,12 @@ public class NPCShopSetupTool : EditorWindow
         TextMeshProUGUI arrowButtonText = arrowButtonObj.GetComponentInChildren<TextMeshProUGUI>();
         arrowButtonText.text = "Arrow Bundle (x20) - 1 coin";
         
+        // Create sell all unequipped button
+        GameObject sellAllButtonObj = CreateSellAllButton("SellAllButton", panel.transform, new Vector2(0, -150));
+        
+        // Create confirmation dialog
+        GameObject confirmationDialog = CreateConfirmationDialog(panel.transform);
+        
         // Create close button
         GameObject closeButtonObj = CreateCloseButton(panel.transform);
         
@@ -278,6 +284,153 @@ public class NPCShopSetupTool : EditorWindow
         TextMeshProUGUI buttonText = textObj.AddComponent<TextMeshProUGUI>();
         buttonText.text = "Purchase";
         buttonText.fontSize = 32;
+        buttonText.color = Color.white;
+        buttonText.alignment = TextAlignmentOptions.Center;
+        buttonText.verticalAlignment = VerticalAlignmentOptions.Middle;
+        
+        return buttonObj;
+    }
+    
+    GameObject CreateSellAllButton(string name, Transform parent, Vector2 position)
+    {
+        GameObject buttonObj = new GameObject(name);
+        buttonObj.transform.SetParent(parent, false);
+        
+        RectTransform buttonRect = buttonObj.AddComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.anchoredPosition = position;
+        buttonRect.sizeDelta = new Vector2(400, 60);
+        
+        Image buttonImage = buttonObj.AddComponent<Image>();
+        buttonImage.color = new Color(0.6f, 0.4f, 0.2f, 1f); // Orange/brown button
+        
+        Button button = buttonObj.AddComponent<Button>();
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(0.6f, 0.4f, 0.2f, 1f);
+        colors.highlightedColor = new Color(0.7f, 0.5f, 0.3f, 1f);
+        colors.pressedColor = new Color(0.5f, 0.3f, 0.1f, 1f);
+        button.colors = colors;
+        
+        // Create text child
+        GameObject textObj = new GameObject("Text");
+        textObj.transform.SetParent(buttonObj.transform, false);
+        RectTransform textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.sizeDelta = Vector2.zero;
+        textRect.anchoredPosition = Vector2.zero;
+        
+        TextMeshProUGUI buttonText = textObj.AddComponent<TextMeshProUGUI>();
+        buttonText.text = "Sell All Unequipped";
+        buttonText.fontSize = 32;
+        buttonText.color = Color.white;
+        buttonText.alignment = TextAlignmentOptions.Center;
+        buttonText.verticalAlignment = VerticalAlignmentOptions.Middle;
+        
+        return buttonObj;
+    }
+    
+    GameObject CreateConfirmationDialog(Transform parent)
+    {
+        // Create dialog panel
+        GameObject dialog = new GameObject("ConfirmationDialog");
+        dialog.transform.SetParent(parent, false);
+        
+        RectTransform dialogRect = dialog.AddComponent<RectTransform>();
+        dialogRect.anchorMin = new Vector2(0.5f, 0.5f);
+        dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
+        dialogRect.pivot = new Vector2(0.5f, 0.5f);
+        dialogRect.anchoredPosition = Vector2.zero;
+        dialogRect.sizeDelta = new Vector2(500, 200);
+        
+        Image dialogImage = dialog.AddComponent<Image>();
+        dialogImage.color = new Color(0.1f, 0.1f, 0.1f, 0.98f); // Dark background
+        
+        // Create message text
+        GameObject messageObj = new GameObject("MessageText");
+        messageObj.transform.SetParent(dialog.transform, false);
+        RectTransform messageRect = messageObj.AddComponent<RectTransform>();
+        messageRect.anchorMin = new Vector2(0.5f, 0.5f);
+        messageRect.anchorMax = new Vector2(0.5f, 0.5f);
+        messageRect.pivot = new Vector2(0.5f, 0.5f);
+        messageRect.anchoredPosition = new Vector2(0, 30);
+        messageRect.sizeDelta = new Vector2(450, 80);
+        
+        TextMeshProUGUI messageText = messageObj.AddComponent<TextMeshProUGUI>();
+        messageText.text = "Sell all items?";
+        messageText.fontSize = 28;
+        messageText.color = Color.white;
+        messageText.alignment = TextAlignmentOptions.Center;
+        messageText.verticalAlignment = VerticalAlignmentOptions.Middle;
+        
+        // Create confirm button
+        GameObject confirmButtonObj = CreateDialogButton("ConfirmButton", dialog.transform, new Vector2(-100, -50));
+        Button confirmButton = confirmButtonObj.GetComponent<Button>();
+        TextMeshProUGUI confirmText = confirmButtonObj.GetComponentInChildren<TextMeshProUGUI>();
+        confirmText.text = "Confirm";
+        Image confirmImage = confirmButtonObj.GetComponent<Image>();
+        confirmImage.color = new Color(0.2f, 0.6f, 0.2f, 1f); // Green
+        ColorBlock confirmColors = confirmButton.colors;
+        confirmColors.normalColor = new Color(0.2f, 0.6f, 0.2f, 1f);
+        confirmColors.highlightedColor = new Color(0.3f, 0.7f, 0.3f, 1f);
+        confirmColors.pressedColor = new Color(0.1f, 0.5f, 0.1f, 1f);
+        confirmButton.colors = confirmColors;
+        
+        // Create cancel button
+        GameObject cancelButtonObj = CreateDialogButton("CancelButton", dialog.transform, new Vector2(100, -50));
+        Button cancelButton = cancelButtonObj.GetComponent<Button>();
+        TextMeshProUGUI cancelText = cancelButtonObj.GetComponentInChildren<TextMeshProUGUI>();
+        cancelText.text = "Cancel";
+        Image cancelImage = cancelButtonObj.GetComponent<Image>();
+        cancelImage.color = new Color(0.6f, 0.2f, 0.2f, 1f); // Red
+        ColorBlock cancelColors = cancelButton.colors;
+        cancelColors.normalColor = new Color(0.6f, 0.2f, 0.2f, 1f);
+        cancelColors.highlightedColor = new Color(0.7f, 0.3f, 0.3f, 1f);
+        cancelColors.pressedColor = new Color(0.5f, 0.1f, 0.1f, 1f);
+        cancelButton.colors = cancelColors;
+        
+        // Initially hide dialog
+        dialog.SetActive(false);
+        
+        return dialog;
+    }
+    
+    GameObject CreateDialogButton(string name, Transform parent, Vector2 position)
+    {
+        GameObject buttonObj = new GameObject(name);
+        buttonObj.transform.SetParent(parent, false);
+        
+        RectTransform buttonRect = buttonObj.AddComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.anchoredPosition = position;
+        buttonRect.sizeDelta = new Vector2(150, 50);
+        
+        Image buttonImage = buttonObj.AddComponent<Image>();
+        buttonImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+        
+        Button button = buttonObj.AddComponent<Button>();
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+        colors.highlightedColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+        colors.pressedColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        button.colors = colors;
+        
+        // Create text child
+        GameObject textObj = new GameObject("Text");
+        textObj.transform.SetParent(buttonObj.transform, false);
+        RectTransform textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.sizeDelta = Vector2.zero;
+        textRect.anchoredPosition = Vector2.zero;
+        
+        TextMeshProUGUI buttonText = textObj.AddComponent<TextMeshProUGUI>();
+        buttonText.text = "Button";
+        buttonText.fontSize = 24;
         buttonText.color = Color.white;
         buttonText.alignment = TextAlignmentOptions.Center;
         buttonText.verticalAlignment = VerticalAlignmentOptions.Middle;
@@ -370,6 +523,45 @@ public class NPCShopSetupTool : EditorWindow
             serializedShopUI.FindProperty("arrowButtonText").objectReferenceValue = buttonText;
         }
         
+        // Link sell all unequipped button
+        Transform sellAllButton = shopPanel.transform.Find("SellAllButton");
+        if (sellAllButton != null)
+        {
+            Button button = sellAllButton.GetComponent<Button>();
+            serializedShopUI.FindProperty("sellAllUnequippedButton").objectReferenceValue = button;
+            
+            TextMeshProUGUI buttonText = sellAllButton.GetComponentInChildren<TextMeshProUGUI>();
+            serializedShopUI.FindProperty("sellAllButtonText").objectReferenceValue = buttonText;
+        }
+        
+        // Link confirmation dialog
+        Transform confirmationDialog = shopPanel.transform.Find("ConfirmationDialog");
+        if (confirmationDialog != null)
+        {
+            serializedShopUI.FindProperty("confirmationDialog").objectReferenceValue = confirmationDialog.gameObject;
+            
+            Transform messageText = confirmationDialog.Find("MessageText");
+            if (messageText != null)
+            {
+                TextMeshProUGUI text = messageText.GetComponent<TextMeshProUGUI>();
+                serializedShopUI.FindProperty("confirmationMessageText").objectReferenceValue = text;
+            }
+            
+            Transform confirmButton = confirmationDialog.Find("ConfirmButton");
+            if (confirmButton != null)
+            {
+                Button button = confirmButton.GetComponent<Button>();
+                serializedShopUI.FindProperty("confirmButton").objectReferenceValue = button;
+            }
+            
+            Transform cancelButton = confirmationDialog.Find("CancelButton");
+            if (cancelButton != null)
+            {
+                Button button = cancelButton.GetComponent<Button>();
+                serializedShopUI.FindProperty("cancelButton").objectReferenceValue = button;
+            }
+        }
+        
         // Link close button
         Transform closeButton = shopPanel.transform.Find("CloseButton");
         if (closeButton != null)
@@ -409,4 +601,5 @@ public class NPCShopSetupTool : EditorWindow
         return null;
     }
 }
+
 

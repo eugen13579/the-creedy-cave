@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78db65c5b82ba4834979b59543223a43, type: 3}
-  m_Name: Bow
+  m_Name: Weapon1
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: Bow
-  icon: {fileID: -1083111729585998019, guid: d6eef1233248346d8a1cef02476f8b49, type: 3}
-  damage: 300
-  attackSpeed: 0.5
+  weaponName: Weapon1
+  icon: {fileID: -6619492975346507483, guid: ab19829ef0c64487eb060e96aba175f0, type: 3}
+  damage: 200
+  attackSpeed: 1.5
+  sellPrice: 20

@@ -605,7 +605,7 @@ PrefabInstance:
       objectReference: {fileID: 6384083204019260639, guid: afdaa1b643993406b8f53636da50b028, type: 3}
     - target: {fileID: 3626916397498700004, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3626916397498700004, guid: 5f38baa5d4941469eb1348acd353ab1a, type: 3}
       propertyPath: m_SortingLayerID
@@ -799,7 +799,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyItemDropper
   possibleDrops:
   - {fileID: 11400000, guid: 39aaf67726df04fac93182e8ec978d36, type: 2}
-  - {fileID: 11400000, guid: a9cbaf69444174b12889246009035e7f, type: 2}
   spawnOffsetRange: 0.5
   coinPrefab: {fileID: 4462004597297847743, guid: b0d3e04bd06bc4743812ae9c40775d79, type: 3}
 --- !u!4 &6727753336086833166 stripped

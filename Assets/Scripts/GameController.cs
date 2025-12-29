@@ -17,12 +17,18 @@ public class GameController : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        if (inventory != null)
-            inventory.SetActive(false);
+        // Ensure inventory is active during initialization so InventoryController.Awake() runs
+        if (inventory != null && !inventory.activeSelf)
+        {
+            inventory.SetActive(true);
+        }
     }
 
     void Start()
     {
+        // Deactivate inventory in Start() after InventoryController.Awake() has run
+        if (inventory != null)
+            inventory.SetActive(false);
         SetDefaultCursor();
     }
 

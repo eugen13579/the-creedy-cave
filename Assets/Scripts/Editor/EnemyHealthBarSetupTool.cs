@@ -897,3 +897,4 @@ public class EnemyHealthBarSetupTool : EditorWindow
         EditorUtility.DisplayDialog("Removal Complete", $"Removed {removed} preview health bar(s).", "OK");
     }
 }
+

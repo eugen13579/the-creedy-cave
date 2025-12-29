@@ -31,3 +31,4 @@ public static class EnemyConstants
     public const int DEBUG_LOG_FRAME_INTERVAL = 60; // Log every N frames to avoid spam
 }
 
+

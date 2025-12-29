@@ -309,6 +309,10 @@ public class SaveButtonUI : MonoBehaviour
         }
         else
         {
+            if (MessageDisplay.Instance != null)
+            {
+                MessageDisplay.Instance.ShowError($"Failed to save game to slot {slot}!");
+            }
             Debug.LogError($"Failed to save game to slot {slot}!");
         }
     }
@@ -333,6 +337,10 @@ public class SaveButtonUI : MonoBehaviour
         }
         else
         {
+            if (MessageDisplay.Instance != null)
+            {
+                MessageDisplay.Instance.ShowError($"Failed to load game from slot {slot}!");
+            }
             Debug.LogError($"Failed to load game from slot {slot}!");
         }
     }

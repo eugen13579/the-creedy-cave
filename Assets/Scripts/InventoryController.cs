@@ -227,7 +227,7 @@ public class InventoryController : MonoBehaviour
     
     /// <summary>
     /// Called when the Use button is clicked.
-    /// Equips the selected weapon to the WeaponCell.
+    /// Equips the selected weapon to the WeaponCell, or uses consumables like health flasks.
     /// </summary>
     public void OnUseButtonClicked()
     {
@@ -237,6 +237,16 @@ public class InventoryController : MonoBehaviour
             return;
         }
         
+        WeaponData itemToUse = selectedCell.currentItem;
+        
+        // Check if this is a health flask
+        if (itemToUse.weaponName == "Health Flask")
+        {
+            UseHealthFlask(itemToUse);
+            return;
+        }
+        
+        // Otherwise, equip as weapon
         // Try to get weaponCell if it's null (in case it wasn't set in Awake)
         if (weaponCell == null)
         {
@@ -269,8 +279,7 @@ public class InventoryController : MonoBehaviour
         }
         
         // Equip the weapon (using SetItem like inventory cells)
-        WeaponData weaponToEquip = selectedCell.currentItem;
-        weaponCell.SetItem(weaponToEquip);
+        weaponCell.SetItem(itemToUse);
         
         // Update player stats if PlayerHealth exists
         PlayerHealth playerHealth = FindFirstObjectByType<PlayerHealth>();
@@ -279,10 +288,75 @@ public class InventoryController : MonoBehaviour
             // Update player attack damage based on weapon
             // Note: This assumes PlayerHealth has a method to set attack damage
             // If not, we may need to add it or use a different approach
-            UpdatePlayerWeaponStats(playerHealth, weaponToEquip);
+            UpdatePlayerWeaponStats(playerHealth, itemToUse);
         }
         
-        Debug.Log($"Equipped weapon: {weaponToEquip.weaponName}");
+        Debug.Log($"Equipped weapon: {itemToUse.weaponName}");
+    }
+    
+    /// <summary>
+    /// Uses a health flask: heals the player, shows message, and removes flask from inventory.
+    /// </summary>
+    private void UseHealthFlask(WeaponData flaskData)
+    {
+        const float healAmount = 500f; // Default heal amount for health flask
+        
+        PlayerHealth playerHealth = FindFirstObjectByType<PlayerHealth>();
+        if (playerHealth == null)
+        {
+            if (MessageDisplay.Instance != null)
+            {
+                MessageDisplay.Instance.ShowError("Cannot use health flask: PlayerHealth not found!");
+            }
+            Debug.LogWarning("Cannot use health flask: PlayerHealth not found!");
+            return;
+        }
+        
+        // Get health before healing
+        float healthBefore = playerHealth.CurrentHealth;
+        
+        // Heal the player
+        playerHealth.Heal(healAmount);
+        
+        // Calculate actual heal amount (may be less if at max health)
+        float actualHealAmount = playerHealth.CurrentHealth - healthBefore;
+        
+        // Show message
+        if (MessageDisplay.Instance == null)
+        {
+            // Create MessageDisplay if it doesn't exist
+            GameObject messageDisplayObj = new GameObject("MessageDisplay");
+            MessageDisplay messageDisplay = messageDisplayObj.AddComponent<MessageDisplay>();
+        }
+        
+        if (MessageDisplay.Instance != null)
+        {
+            string message = $"Player has used a healthflask (HP +{actualHealAmount:F0})";
+            MessageDisplay.Instance.ShowMessage(message, 5f);
+        }
+        
+        // Remove flask from inventory
+        int itemIndex = -1;
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (items[i] == flaskData)
+            {
+                itemIndex = i;
+                break;
+            }
+        }
+        
+        if (itemIndex >= 0)
+        {
+            RemoveItemAt(itemIndex);
+        }
+        else
+        {
+            // Fallback: try to remove by reference
+            RemoveItem(flaskData);
+        }
+        
+        Debug.Log($"Used health flask: Healed {actualHealAmount:F0} HP");
     }
     
     /// <summary>
@@ -307,6 +381,87 @@ public class InventoryController : MonoBehaviour
         // Enable button only if a weapon is selected
         bool hasSelectedWeapon = selectedCell != null && selectedCell.currentItem != null;
         useButton.interactable = hasSelectedWeapon;
+    }
+    
+    /// <summary>
+    /// Gets all items in the inventory with their indices.
+    /// Returns a list of tuples containing (index, WeaponData).
+    /// </summary>
+    public System.Collections.Generic.List<System.Tuple<int, WeaponData>> GetAllItems()
+    {
+        System.Collections.Generic.List<System.Tuple<int, WeaponData>> itemList = 
+            new System.Collections.Generic.List<System.Tuple<int, WeaponData>>();
+        
+        if (items == null) return itemList;
+        
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (items[i] != null)
+            {
+                itemList.Add(new System.Tuple<int, WeaponData>(i, items[i]));
+            }
+        }
+        
+        return itemList;
+    }
+    
+    /// <summary>
+    /// Removes an item from the inventory at the specified index.
+    /// </summary>
+    /// <param name="index">Index of the item to remove</param>
+    /// <returns>True if item was removed successfully, false otherwise</returns>
+    public bool RemoveItemAt(int index)
+    {
+        if (items == null || index < 0 || index >= items.Length)
+        {
+            return false;
+        }
+        
+        if (items[index] == null)
+        {
+            return false;
+        }
+        
+        // Clear the item from the array
+        items[index] = null;
+        
+        // Clear the corresponding cell
+        if (gridContainer != null && index < gridContainer.childCount)
+        {
+            CellController cell = gridContainer.GetChild(index).GetComponent<CellController>();
+            if (cell != null)
+            {
+                cell.ClearItem();
+            }
+        }
+        
+        // If the removed item was selected, deselect it
+        if (selectedCell != null && selectedCell.currentItem == null)
+        {
+            DeselectCell();
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Removes a specific weapon from the inventory.
+    /// </summary>
+    /// <param name="weapon">The weapon to remove</param>
+    /// <returns>True if weapon was removed successfully, false otherwise</returns>
+    public bool RemoveItem(WeaponData weapon)
+    {
+        if (weapon == null || items == null) return false;
+        
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (items[i] == weapon)
+            {
+                return RemoveItemAt(i);
+            }
+        }
+        
+        return false;
     }
 }
 
