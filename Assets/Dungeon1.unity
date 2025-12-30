@@ -6736,6 +6736,7 @@ MonoBehaviour:
   deathSceneName: DeathScene
   pauseGameOnDeath: 1
   mainMenuSceneName: Menu
+  allowRestart: 1
 --- !u!4 &388550458
 Transform:
   m_ObjectHideFlags: 0
@@ -54208,7 +54209,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 855453171745920447, guid: d5b84ebc6b56647e9aa0c84a27eb1878, type: 3}
       propertyPath: maxHealth
-      value: 2000
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 855453171745920447, guid: d5b84ebc6b56647e9aa0c84a27eb1878, type: 3}
       propertyPath: attackDamage
