@@ -236,7 +236,7 @@ public class SaveSystem : MonoBehaviour
         CoinManager coinManager = Object.FindFirstObjectByType<CoinManager>();
         if (coinManager != null)
         {
-            saveData.coinCount = coinManager.coinCount;
+            saveData.coinCount = coinManager.CoinCount;
         }
         else
         {
@@ -386,7 +386,7 @@ public class SaveSystem : MonoBehaviour
         CoinManager coinManager = Object.FindFirstObjectByType<CoinManager>();
         if (coinManager != null)
         {
-            coinManager.coinCount = saveData.coinCount;
+            coinManager.CoinCount = saveData.coinCount;
         }
         else
         {

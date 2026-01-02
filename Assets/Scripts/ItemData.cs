@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// ScriptableObject that defines item properties including type, stats, and economy values.
+/// </summary>
 [CreateAssetMenu(fileName = "NewItem", menuName = "Items/Item")]
 public class ItemData : ScriptableObject
 {

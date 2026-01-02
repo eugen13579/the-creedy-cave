@@ -29,7 +29,7 @@ public class MessageDisplay : MonoBehaviour
         public float startTime;
     }
     
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -42,8 +42,11 @@ public class MessageDisplay : MonoBehaviour
         }
         SetupMessageDisplay();
     }
-    
-    void SetupMessageDisplay()
+
+    /// <summary>
+    /// Sets up the message display UI components.
+    /// </summary>
+    private void SetupMessageDisplay()
     {
         // Find or create HUD Canvas
         Canvas hudCanvas = null;

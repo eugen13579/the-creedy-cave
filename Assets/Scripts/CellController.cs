@@ -2,19 +2,27 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>
+/// Controls individual inventory cell behavior, including item display, selection, and interaction.
+/// </summary>
 public class CellController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    [Header("UI References")]
+    [SerializeField] private GameObject highlight;
+    [SerializeField] private Image itemIcon;
+
     public bool selected = false;
-    public GameObject highlight;
-    public Image itemIcon;
     public ItemData currentItem;
+
     private Animator animator;
 
-    void Start()
+    private void Start()
     {
         animator = GetComponent<Animator>();
         if (highlight != null)
+        {
             highlight.SetActive(false);
+        }
     }
 
     public void SetHighlight(bool show)

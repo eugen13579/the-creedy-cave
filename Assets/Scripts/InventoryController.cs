@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Manages the player's inventory system, including item storage, equipment slots, and item interactions.
+/// Handles item equipping, dropping, selling, and consumable usage.
+/// </summary>
 public class InventoryController : MonoBehaviour
 {
     public static InventoryController Instance;
@@ -702,13 +706,6 @@ public class InventoryController : MonoBehaviour
                 UpdatePlayerWeaponStats(playerHealth, itemToUse);
             }
             // TODO: Add defense stat updates for armor items
-            // else if (itemToUse.itemType == ItemData.ItemType.Armor || 
-            //          itemToUse.itemType == ItemData.ItemType.Hat ||
-            //          itemToUse.itemType == ItemData.ItemType.Gloves ||
-            //          itemToUse.itemType == ItemData.ItemType.Shoes)
-            // {
-            //     UpdatePlayerDefenseStats(playerHealth, itemToUse);
-            // }
         }
         
         // Deselect the cell since item is now equipped

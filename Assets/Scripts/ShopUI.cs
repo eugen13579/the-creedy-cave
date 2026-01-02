@@ -143,7 +143,7 @@ public class ShopUI : MonoBehaviour
         // Update coin display if visible
         if (shopPanel != null && shopPanel.activeSelf && coinDisplayText != null && coinManager != null)
         {
-            coinDisplayText.text = $"Coins: {coinManager.coinCount}";
+            coinDisplayText.text = $"Coins: {coinManager.CoinCount}";
         }
     }
     
@@ -193,7 +193,7 @@ public class ShopUI : MonoBehaviour
     {
         if (coinDisplayText != null && coinManager != null)
         {
-            coinDisplayText.text = $"Coins: {coinManager.coinCount}";
+            coinDisplayText.text = $"Coins: {coinManager.CoinCount}";
         }
     }
     
@@ -286,7 +286,7 @@ public class ShopUI : MonoBehaviour
         }
         
         // Check if player has enough coins
-        if (coinManager.coinCount >= bowPrice)
+        if (coinManager.CoinCount >= bowPrice)
         {
             // Spend coins
             if (coinManager.SpendCoins(bowPrice))
@@ -300,7 +300,7 @@ public class ShopUI : MonoBehaviour
                 else
                 {
                     // Refund coins if inventory is full
-                    coinManager.coinCount += bowPrice;
+                    coinManager.CoinCount += bowPrice;
                     if (MessageDisplay.Instance != null)
                     {
                         MessageDisplay.Instance.ShowError("Inventory is full! Cannot purchase bow.");
@@ -337,7 +337,7 @@ public class ShopUI : MonoBehaviour
         }
         
         // Check if player has enough coins
-        if (coinManager.coinCount >= arrowBundlePrice)
+        if (coinManager.CoinCount >= arrowBundlePrice)
         {
             // Spend coins
             if (coinManager.SpendCoins(arrowBundlePrice))

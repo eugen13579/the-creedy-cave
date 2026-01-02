@@ -1,19 +1,19 @@
 using UnityEngine;
 
+/// <summary>
+/// Manages player currency (coins) - collection, spending, and balance tracking.
+/// </summary>
 public class CoinManager : MonoBehaviour
 {
-    public int coinCount = 0;
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [SerializeField] private int coinCount = 0;
 
-    // Update is called once per frame
-    void Update()
+    /// <summary>
+    /// Gets or sets the current coin count.
+    /// </summary>
+    public int CoinCount
     {
-        
+        get => coinCount;
+        set => coinCount = Mathf.Max(0, value); // Ensure coin count is never negative
     }
 
     /// <summary>

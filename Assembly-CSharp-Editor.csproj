@@ -49,8 +49,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Editor\MusicManagerSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\PlayerStatsDisplaySetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\HealthFlaskSetupTool.cs" />
     <Compile Include="Assets\Scripts\Editor\HealthBarSetupTool.cs" />
     <Compile Include="Assets\Scripts\Editor\NPCShopSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\InventorySellButtonSetupTool.cs" />
+    <Compile Include="Assets\Scripts\Editor\SaveSystemEditorTool.cs" />
     <Compile Include="Assets\Scripts\Editor\EnemyHealthBarSetupTool.cs" />
     <Compile Include="Assets\Scripts\Editor\EnemyItemDropperSetupTool.cs" />
     <Compile Include="Assets\Scripts\Editor\ArrowSystemDebugTool.cs" />

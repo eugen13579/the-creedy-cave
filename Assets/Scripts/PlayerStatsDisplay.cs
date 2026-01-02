@@ -66,7 +66,7 @@ public class PlayerStatsDisplay : MonoBehaviour
         // Update gold
         if (goldText != null && coinManager != null)
         {
-            goldText.text = $"Gold: {coinManager.coinCount}";
+            goldText.text = $"Gold: {coinManager.CoinCount}";
         }
         
         // Update attack damage

@@ -1,7 +1,11 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
 
+/// <summary>
+/// Manages turn-based combat between player and enemies.
+/// Handles combat state, turn order, and damage calculation.
+/// </summary>
 public class CombatManager : MonoBehaviour
 {
     public static CombatManager Instance { get; private set; }
@@ -20,11 +24,22 @@ public class CombatManager : MonoBehaviour
     private EnemyHealth currentEnemy;
     private Coroutine combatCoroutine;
     
+    /// <summary>
+    /// Event fired when combat starts. Parameters: player, enemy.
+    /// </summary>
     public event Action<PlayerHealth, EnemyHealth> OnCombatStarted;
+
+    /// <summary>
+    /// Event fired when combat ends.
+    /// </summary>
     public event Action OnCombatEnded;
-    public event Action<float, bool> OnDamageDealt; // damage, isPlayerAttacking (true = player attacking enemy)
+
+    /// <summary>
+    /// Event fired when damage is dealt. Parameters: damage amount, isPlayerAttacking (true = player attacking enemy).
+    /// </summary>
+    public event Action<float, bool> OnDamageDealt;
     
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -36,7 +51,12 @@ public class CombatManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
+
+    /// <summary>
+    /// Starts a combat encounter between the player and an enemy.
+    /// </summary>
+    /// <param name="player">The player's health component</param>
+    /// <param name="enemy">The enemy's health component</param>
     public void StartCombat(PlayerHealth player, EnemyHealth enemy)
     {
         // Prevent starting combat if already in combat
@@ -59,9 +79,15 @@ public class CombatManager : MonoBehaviour
         combatCoroutine = StartCoroutine(CombatLoop());
     }
     
+    /// <summary>
+    /// Ends the current combat encounter.
+    /// </summary>
     public void EndCombat()
     {
-        if (!IsInCombat) return;
+        if (!IsInCombat)
+        {
+            return;
+        }
         
         if (combatCoroutine != null)
         {
@@ -146,6 +172,3 @@ public class CombatManager : MonoBehaviour
         yield return null;
     }
 }
-
-
-
