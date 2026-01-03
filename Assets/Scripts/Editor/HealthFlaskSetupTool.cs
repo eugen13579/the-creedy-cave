@@ -24,7 +24,7 @@ public class HealthFlaskSetupTool : EditorWindow
         
         EditorGUILayout.HelpBox("This will create:\n" +
             "1. Health Flask GameObject with Pickupable component\n" +
-            "2. WeaponData asset for the flask (if not exists)\n" +
+            "2. ItemData asset for the flask (if not exists)\n" +
             "3. SpriteRenderer with flask sprite\n" +
             "4. CircleCollider2D for pickup detection\n\n" +
             "The flask can be picked up and added to inventory.", MessageType.Info);
@@ -64,11 +64,11 @@ public class HealthFlaskSetupTool : EditorWindow
     
     void SetupHealthFlask()
     {
-        // Step 1: Create or load WeaponData asset for health flask
-        WeaponData flaskData = CreateOrLoadFlaskData();
+        // Step 1: Create or load ItemData asset for health flask
+        ItemData flaskData = CreateOrLoadFlaskData();
         if (flaskData == null)
         {
-            EditorUtility.DisplayDialog("Error", "Failed to create or load flask WeaponData asset!", "OK");
+            EditorUtility.DisplayDialog("Error", "Failed to create or load flask ItemData asset!", "OK");
             return;
         }
         
@@ -110,9 +110,9 @@ public class HealthFlaskSetupTool : EditorWindow
         // Step 5: Add Pickupable component
         Pickupable pickupable = flask.AddComponent<Pickupable>();
         
-        // Link WeaponData to Pickupable using SerializedObject
+        // Link ItemData to Pickupable using SerializedObject
         SerializedObject serializedPickupable = new SerializedObject(pickupable);
-        serializedPickupable.FindProperty("weaponData").objectReferenceValue = flaskData;
+        serializedPickupable.FindProperty("itemData").objectReferenceValue = flaskData;
         serializedPickupable.ApplyModifiedProperties();
         
         Debug.Log("Created Health Flask GameObject with all components");
@@ -127,11 +127,11 @@ public class HealthFlaskSetupTool : EditorWindow
         // Select flask in hierarchy
         Selection.activeGameObject = flask;
         
-        EditorUtility.DisplayDialog("Setup Complete", 
+            EditorUtility.DisplayDialog("Setup Complete", 
             "Health Flask has been set up successfully!\n\n" +
             "Created:\n" +
             $"- HealthFlask GameObject at position {flaskPosition}\n" +
-            $"- WeaponData asset: {AssetDatabase.GetAssetPath(flaskData)}\n" +
+            $"- ItemData asset: {AssetDatabase.GetAssetPath(flaskData)}\n" +
             "- Pickupable component configured\n\n" +
             "You can now:\n" +
             "1. Move HealthFlask to desired position\n" +
@@ -139,20 +139,22 @@ public class HealthFlaskSetupTool : EditorWindow
             "3. Test pickup in Play mode", "OK");
     }
     
-    WeaponData CreateOrLoadFlaskData()
+    ItemData CreateOrLoadFlaskData()
     {
         string assetPath = "Assets/Assets/Items/HealthFlask.asset";
         
         // Try to load existing asset
-        WeaponData flaskData = AssetDatabase.LoadAssetAtPath<WeaponData>(assetPath);
+        ItemData flaskData = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
         
         if (flaskData == null)
         {
-            // Create new WeaponData asset
-            flaskData = ScriptableObject.CreateInstance<WeaponData>();
-            flaskData.weaponName = "Health Flask";
+            // Create new ItemData asset
+            flaskData = ScriptableObject.CreateInstance<ItemData>();
+            flaskData.itemName = "Health Flask";
+            flaskData.itemType = ItemData.ItemType.Consumable;
             flaskData.damage = 0; // Flasks don't deal damage
             flaskData.attackSpeed = 0f;
+            flaskData.defense = 0;
             flaskData.sellPrice = 1;
             
             // Try to load sprite for the asset
@@ -190,11 +192,11 @@ public class HealthFlaskSetupTool : EditorWindow
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             
-            Debug.Log($"Created new HealthFlask WeaponData asset at {assetPath}");
+            Debug.Log($"Created new HealthFlask ItemData asset at {assetPath}");
         }
         else
         {
-            Debug.Log($"Loaded existing HealthFlask WeaponData asset from {assetPath}");
+            Debug.Log($"Loaded existing HealthFlask ItemData asset from {assetPath}");
         }
         
         return flaskData;

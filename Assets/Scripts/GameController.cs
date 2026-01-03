@@ -1,13 +1,19 @@
 using UnityEngine;
 
+/// <summary>
+/// Main game controller that manages global game state, inventory, and cursor behavior.
+/// </summary>
 public class GameController : MonoBehaviour
 {
     public static GameController Instance;
 
+    [Header("Cursor Settings")]
     public Texture2D defaultCursor;
     public Texture2D[] hoverCursorFrames;
     public float cursorFrameRate = 10f;
     public Vector2 hotspot = Vector2.zero;
+
+    [Header("Inventory")]
     public GameObject inventory;
 
     private bool isHovering = false;

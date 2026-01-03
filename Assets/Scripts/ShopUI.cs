@@ -29,7 +29,7 @@ public class ShopUI : MonoBehaviour
     [SerializeField] private int bowPrice = 1;
     [SerializeField] private int arrowBundlePrice = 1;
     [SerializeField] private int arrowsPerBundle = 20;
-    [SerializeField] private WeaponData bowWeaponData;
+    [SerializeField] private ItemData bowWeaponData;
     
     private CoinManager coinManager;
     private ArrowInventory arrowInventory;
@@ -103,7 +103,7 @@ public class ShopUI : MonoBehaviour
         
         if (sellAllUnequippedButton != null)
         {
-            sellAllUnequippedButton.onClick.AddListener(OnSellAllUnequippedClicked);
+            sellAllUnequippedButton.onClick.AddListener(OnSellItemClicked);
         }
         
         if (closeButton != null)
@@ -143,7 +143,7 @@ public class ShopUI : MonoBehaviour
         // Update coin display if visible
         if (shopPanel != null && shopPanel.activeSelf && coinDisplayText != null && coinManager != null)
         {
-            coinDisplayText.text = $"Coins: {coinManager.coinCount}";
+            coinDisplayText.text = $"Coins: {coinManager.CoinCount}";
         }
     }
     
@@ -169,6 +169,21 @@ public class ShopUI : MonoBehaviour
         {
             shopPanel.SetActive(false);
         }
+        
+        // Exit sell mode if inventory is in sell mode
+        if (inventoryController == null)
+        {
+            inventoryController = InventoryController.Instance;
+            if (inventoryController == null)
+            {
+                inventoryController = FindFirstObjectByType<InventoryController>();
+            }
+        }
+        
+        if (inventoryController != null)
+        {
+            inventoryController.ExitSellMode();
+        }
     }
     
     /// <summary>
@@ -178,7 +193,7 @@ public class ShopUI : MonoBehaviour
     {
         if (coinDisplayText != null && coinManager != null)
         {
-            coinDisplayText.text = $"Coins: {coinManager.coinCount}";
+            coinDisplayText.text = $"Coins: {coinManager.CoinCount}";
         }
     }
     
@@ -199,7 +214,7 @@ public class ShopUI : MonoBehaviour
         
         if (sellAllButtonText != null)
         {
-            sellAllButtonText.text = "Sell All Unequipped";
+            sellAllButtonText.text = "Sell Item";
         }
     }
     
@@ -216,7 +231,7 @@ public class ShopUI : MonoBehaviour
         
         if (bowWeaponData == null)
         {
-            Debug.LogWarning("ShopUI: Bow WeaponData not assigned!");
+            Debug.LogWarning("ShopUI: Bow ItemData not assigned!");
             return;
         }
         
@@ -271,7 +286,7 @@ public class ShopUI : MonoBehaviour
         }
         
         // Check if player has enough coins
-        if (coinManager.coinCount >= bowPrice)
+        if (coinManager.CoinCount >= bowPrice)
         {
             // Spend coins
             if (coinManager.SpendCoins(bowPrice))
@@ -285,7 +300,7 @@ public class ShopUI : MonoBehaviour
                 else
                 {
                     // Refund coins if inventory is full
-                    coinManager.coinCount += bowPrice;
+                    coinManager.CoinCount += bowPrice;
                     if (MessageDisplay.Instance != null)
                     {
                         MessageDisplay.Instance.ShowError("Inventory is full! Cannot purchase bow.");
@@ -322,7 +337,7 @@ public class ShopUI : MonoBehaviour
         }
         
         // Check if player has enough coins
-        if (coinManager.coinCount >= arrowBundlePrice)
+        if (coinManager.CoinCount >= arrowBundlePrice)
         {
             // Spend coins
             if (coinManager.SpendCoins(arrowBundlePrice))
@@ -346,7 +361,7 @@ public class ShopUI : MonoBehaviour
     /// <summary>
     /// Sets the bow weapon data reference.
     /// </summary>
-    public void SetBowWeaponData(WeaponData bowData)
+    public void SetBowWeaponData(ItemData bowData)
     {
         bowWeaponData = bowData;
     }
@@ -354,10 +369,10 @@ public class ShopUI : MonoBehaviour
     /// <summary>
     /// Gets all unequipped items from inventory with their sell prices.
     /// </summary>
-    private System.Collections.Generic.List<System.Tuple<WeaponData, int>> GetUnequippedItems()
+    private System.Collections.Generic.List<System.Tuple<ItemData, int>> GetUnequippedItems()
     {
-        System.Collections.Generic.List<System.Tuple<WeaponData, int>> unequippedItems = 
-            new System.Collections.Generic.List<System.Tuple<WeaponData, int>>();
+        System.Collections.Generic.List<System.Tuple<ItemData, int>> unequippedItems = 
+            new System.Collections.Generic.List<System.Tuple<ItemData, int>>();
         
         if (inventoryController == null)
         {
@@ -376,7 +391,7 @@ public class ShopUI : MonoBehaviour
         }
         
         // Get equipped weapon
-        WeaponData equippedWeapon = null;
+        ItemData equippedWeapon = null;
         if (inventoryController.WeaponCell != null)
         {
             equippedWeapon = inventoryController.WeaponCell.currentItem;
@@ -385,17 +400,17 @@ public class ShopUI : MonoBehaviour
         // Get all items from inventory
         var allItems = inventoryController.GetAllItems();
         
-        // Count occurrences of each weapon (to handle duplicates)
+        // Count occurrences of each item (to handle duplicates)
         // Only exclude ONE instance of the equipped weapon, not all instances
         bool equippedWeaponExcluded = false;
         
         foreach (var itemTuple in allItems)
         {
-            WeaponData weapon = itemTuple.Item2;
-            if (weapon != null)
+            ItemData item = itemTuple.Item2;
+            if (item != null)
             {
                 // If this is the equipped weapon, only exclude the first occurrence
-                if (equippedWeapon != null && weapon == equippedWeapon)
+                if (equippedWeapon != null && item == equippedWeapon)
                 {
                     if (!equippedWeaponExcluded)
                     {
@@ -406,8 +421,8 @@ public class ShopUI : MonoBehaviour
                     // If we've already excluded one, include the rest
                 }
                 
-                int sellPrice = weapon.sellPrice;
-                unequippedItems.Add(new System.Tuple<WeaponData, int>(weapon, sellPrice));
+                int sellPrice = item.sellPrice;
+                unequippedItems.Add(new System.Tuple<ItemData, int>(item, sellPrice));
             }
         }
         
@@ -415,39 +430,54 @@ public class ShopUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Handles sell all unequipped button click.
-    /// Shows confirmation dialog with total value.
+    /// Handles sell item button click.
+    /// Enters sell mode in inventory.
     /// </summary>
-    private void OnSellAllUnequippedClicked()
+    private void OnSellItemClicked()
     {
-        if (coinManager == null)
+        // Hide shop panel
+        if (shopPanel != null)
         {
-            Debug.LogWarning("ShopUI: CoinManager not found!");
-            return;
+            shopPanel.SetActive(false);
         }
         
-        // Get unequipped items
-        var unequippedItems = GetUnequippedItems();
-        
-        if (unequippedItems.Count == 0)
+        // Find InventoryController if not already set
+        if (inventoryController == null)
         {
+            inventoryController = InventoryController.Instance;
+            if (inventoryController == null)
+            {
+                inventoryController = FindFirstObjectByType<InventoryController>();
+            }
+            if (inventoryController == null)
+            {
+                GameObject inventoryObj = GameObject.Find("Inventory");
+                if (inventoryObj != null)
+                {
+                    inventoryController = inventoryObj.GetComponent<InventoryController>();
+                }
+            }
+        }
+        
+        if (inventoryController == null)
+        {
+            Debug.LogWarning("ShopUI: InventoryController not found! Cannot enter sell mode.");
             if (MessageDisplay.Instance != null)
             {
-                MessageDisplay.Instance.ShowError("No unequipped items to sell!");
+                MessageDisplay.Instance.ShowError("Inventory not found!");
             }
-            Debug.Log("No unequipped items to sell!");
             return;
         }
         
-        // Calculate total value
-        int totalValue = 0;
-        foreach (var item in unequippedItems)
+        // Show inventory and enter sell mode
+        GameObject inventoryObj2 = inventoryController.gameObject;
+        if (inventoryObj2 != null)
         {
-            totalValue += item.Item2;
+            inventoryObj2.SetActive(true);
         }
         
-        // Show confirmation dialog
-        ShowConfirmationDialog(totalValue, unequippedItems.Count);
+        inventoryController.EnterSellMode();
+        Debug.Log("ShopUI: Entered sell mode in inventory.");
     }
     
     /// <summary>
@@ -513,10 +543,10 @@ public class ShopUI : MonoBehaviour
         
         foreach (var item in unequippedItems)
         {
-            WeaponData weapon = item.Item1;
+            ItemData itemData = item.Item1;
             int sellPrice = item.Item2;
             
-            if (inventoryController.RemoveItem(weapon))
+            if (inventoryController.RemoveItem(itemData))
             {
                 totalValue += sellPrice;
                 itemsSold++;

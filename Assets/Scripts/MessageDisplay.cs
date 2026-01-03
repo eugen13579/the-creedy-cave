@@ -29,7 +29,7 @@ public class MessageDisplay : MonoBehaviour
         public float startTime;
     }
     
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -42,8 +42,11 @@ public class MessageDisplay : MonoBehaviour
         }
         SetupMessageDisplay();
     }
-    
-    void SetupMessageDisplay()
+
+    /// <summary>
+    /// Sets up the message display UI components.
+    /// </summary>
+    private void SetupMessageDisplay()
     {
         // Find or create HUD Canvas
         Canvas hudCanvas = null;
@@ -89,7 +92,7 @@ public class MessageDisplay : MonoBehaviour
             containerRect.anchorMin = new Vector2(0, 1);
             containerRect.anchorMax = new Vector2(0, 1);
             containerRect.pivot = new Vector2(0, 1);
-            containerRect.anchoredPosition = new Vector2(20, -20); // Top-left, 20px from edges
+            containerRect.anchoredPosition = new Vector2(20, -60); // Top-left, 20px from left, 60px from top
             containerRect.sizeDelta = new Vector2(800, 400); // Container for multiple messages
             
             messageContainer = containerObj.transform;
@@ -132,13 +135,22 @@ public class MessageDisplay : MonoBehaviour
         messageText.text = message;
         messageText.fontSize = 24;
         messageText.fontStyle = FontStyles.Bold;
-        messageText.color = new Color(1f, 1f, 1f, 1f); // White color
+        messageText.color = Color.white; // White color
+        messageText.faceColor = Color.white; // Ensure face color is white
         messageText.alignment = TextAlignmentOptions.Left;
         messageText.verticalAlignment = VerticalAlignmentOptions.Top;
-        messageText.outlineWidth = 0.2f;
-        messageText.outlineColor = new Color(0f, 0f, 0f, 1f); // Black outline
-        messageText.enableWordWrapping = false; // Prevent text wrapping
+        messageText.outlineWidth = 0f; // No outline
+        messageText.outlineColor = new Color(0f, 0f, 0f, 0f); // Transparent outline
+        messageText.textWrappingMode = TextWrappingModes.NoWrap; // Prevent text wrapping
         messageText.overflowMode = TextOverflowModes.Overflow; // Allow text to overflow if needed
+        
+        // Ensure material color is white
+        if (messageText.fontSharedMaterial != null)
+        {
+            messageText.fontSharedMaterial.SetColor("_FaceColor", Color.white);
+        }
+        
+        messageText.ForceMeshUpdate(); // Force update to apply color
         
         // Create message item
         MessageItem messageItem = new MessageItem
@@ -231,12 +243,12 @@ public class MessageDisplay : MonoBehaviour
         messageText.text = message;
         messageText.fontSize = 24;
         messageText.fontStyle = FontStyles.Bold;
-        messageText.color = new Color(1f, 0f, 0f, 1f); // Red color for errors
+        messageText.color = Color.white; // White color
         messageText.alignment = TextAlignmentOptions.Left;
         messageText.verticalAlignment = VerticalAlignmentOptions.Top;
-        messageText.outlineWidth = 0.2f;
-        messageText.outlineColor = new Color(0f, 0f, 0f, 1f); // Black outline
-        messageText.enableWordWrapping = false;
+        messageText.outlineWidth = 0f; // No outline
+        messageText.outlineColor = new Color(0f, 0f, 0f, 0f); // Transparent outline
+        messageText.textWrappingMode = TextWrappingModes.NoWrap;
         messageText.overflowMode = TextOverflowModes.Overflow;
         
         MessageItem messageItem = new MessageItem

@@ -20,9 +20,37 @@ public class EnemyItemDropper : MonoBehaviour
     
     private EnemyHealth enemyHealth;
     
+    private bool isSubscribed = false;
+    
     void Start()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
+        SubscribeToDeathEvent();
+    }
+    
+    void OnEnable()
+    {
+        // If Start hasn't run yet and we have enemyHealth, subscribe
+        // Otherwise, if enemyHealth was null at Start, try to get it now
+        if (!isSubscribed)
+        {
+            if (enemyHealth == null)
+            {
+                enemyHealth = GetComponent<EnemyHealth>();
+            }
+            
+            if (enemyHealth != null)
+            {
+                SubscribeToDeathEvent();
+            }
+        }
+    }
+    
+    private void SubscribeToDeathEvent()
+    {
+        if (enemyHealth == null)
+        {
+            enemyHealth = GetComponent<EnemyHealth>();
+        }
         
         if (enemyHealth == null)
         {
@@ -30,24 +58,12 @@ public class EnemyItemDropper : MonoBehaviour
             return;
         }
         
-        // Subscribe to death event
+        // Unsubscribe first to prevent duplicate subscriptions
+        enemyHealth.OnDeath -= OnEnemyDeath;
         enemyHealth.OnDeath += OnEnemyDeath;
+        isSubscribed = true;
         
         Debug.Log($"[EnemyItemDropper] Subscribed to death event on {gameObject.name}. Drop count: {possibleDrops.Count}");
-    }
-    
-    void OnEnable()
-    {
-        // Also subscribe in OnEnable in case EnemyHealth wasn't ready at Start
-        if (enemyHealth == null)
-        {
-            enemyHealth = GetComponent<EnemyHealth>();
-        }
-        
-        if (enemyHealth != null)
-        {
-            enemyHealth.OnDeath += OnEnemyDeath;
-        }
     }
     
     void OnDestroy()
@@ -57,6 +73,7 @@ public class EnemyItemDropper : MonoBehaviour
         {
             enemyHealth.OnDeath -= OnEnemyDeath;
         }
+        isSubscribed = false;
     }
     
     private void OnEnemyDeath()
@@ -104,7 +121,12 @@ public class EnemyItemDropper : MonoBehaviour
                 switch (dropData.itemType)
                 {
                     case ItemDropData.ItemType.Weapon:
-                        SpawnWeapon(dropData.weaponData, spawnPosition);
+                    case ItemDropData.ItemType.Armor:
+                    case ItemDropData.ItemType.Hat:
+                    case ItemDropData.ItemType.Gloves:
+                    case ItemDropData.ItemType.Shoes:
+                    case ItemDropData.ItemType.Consumable:
+                        SpawnItem(dropData.itemData, spawnPosition);
                         spawnedCount++;
                         break;
                     
@@ -134,40 +156,43 @@ public class EnemyItemDropper : MonoBehaviour
     }
     
     /// <summary>
-    /// Spawns a weapon pickup at the specified position.
+    /// Spawns an item pickup at the specified position.
     /// </summary>
-    private void SpawnWeapon(WeaponData weaponData, Vector3 position)
+    private void SpawnItem(ItemData itemData, Vector3 position)
     {
-        if (weaponData == null)
+        if (itemData == null)
         {
-            Debug.LogWarning($"[EnemyItemDropper] Cannot spawn weapon: WeaponData is null!");
+            Debug.LogWarning($"[EnemyItemDropper] Cannot spawn item: ItemData is null!");
             return;
         }
         
-        // Create new GameObject for weapon pickup
-        GameObject weaponPickup = new GameObject($"WeaponPickup_{weaponData.weaponName}");
-        weaponPickup.transform.position = position;
+        // Create new GameObject for item pickup
+        GameObject itemPickup = new GameObject($"ItemPickup_{itemData.itemName}");
+        itemPickup.transform.position = position;
         
         // Ensure it's not parented to the enemy (in case enemy gets destroyed)
-        weaponPickup.transform.SetParent(null);
+        itemPickup.transform.SetParent(null);
         
         // Add required components
-        SpriteRenderer spriteRenderer = weaponPickup.AddComponent<SpriteRenderer>();
-        CircleCollider2D collider = weaponPickup.AddComponent<CircleCollider2D>();
-        Pickupable pickupable = weaponPickup.AddComponent<Pickupable>();
+        SpriteRenderer spriteRenderer = itemPickup.AddComponent<SpriteRenderer>();
+        CircleCollider2D collider = itemPickup.AddComponent<CircleCollider2D>();
+        Pickupable pickupable = itemPickup.AddComponent<Pickupable>();
         
         // Configure Pickupable component
-        pickupable.weaponData = weaponData;
+        pickupable.itemData = itemData;
         
         // Set sprite
-        if (weaponData.icon != null)
+        if (itemData.icon != null)
         {
-            spriteRenderer.sprite = weaponData.icon;
+            spriteRenderer.sprite = itemData.icon;
         }
         else
         {
-            Debug.LogWarning($"[EnemyItemDropper] WeaponData {weaponData.weaponName} has no icon sprite!");
+            Debug.LogWarning($"[EnemyItemDropper] ItemData {itemData.itemName} has no icon sprite!");
         }
+        
+        // Apply sprite size after itemData is set
+        pickupable.ApplySpriteSize();
         
         // Configure collider
         collider.isTrigger = true;
@@ -175,8 +200,9 @@ public class EnemyItemDropper : MonoBehaviour
         
         // Set sorting layer (matching Pickupable component behavior)
         spriteRenderer.sortingLayerName = "Player";
+        spriteRenderer.sortingOrder = 1;
         
-        Debug.Log($"[EnemyItemDropper] ✓ Spawned weapon pickup: {weaponData.weaponName} at {position}");
+        Debug.Log($"[EnemyItemDropper] ✓ Spawned item pickup: {itemData.itemName} (Type: {itemData.itemType}) at {position}");
     }
     
     /// <summary>

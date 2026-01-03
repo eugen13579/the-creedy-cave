@@ -180,7 +180,7 @@ public class EnemyItemDropperEditor : Editor
                 
                 SerializedProperty itemTypeProp = dropDataObject.FindProperty("itemType");
                 SerializedProperty spawnRateProp = dropDataObject.FindProperty("spawnRate");
-                SerializedProperty weaponDataProp = dropDataObject.FindProperty("weaponData");
+                SerializedProperty itemDataProp = dropDataObject.FindProperty("itemData");
                 SerializedProperty coinValueProp = dropDataObject.FindProperty("coinValue");
                 
                 // Item Type
@@ -198,13 +198,18 @@ public class EnemyItemDropperEditor : Editor
                 // Conditional fields based on item type
                 ItemDropData.ItemType itemType = (ItemDropData.ItemType)itemTypeProp.enumValueIndex;
                 
-                if (itemType == ItemDropData.ItemType.Weapon)
+                if (itemType == ItemDropData.ItemType.Weapon ||
+                    itemType == ItemDropData.ItemType.Armor ||
+                    itemType == ItemDropData.ItemType.Hat ||
+                    itemType == ItemDropData.ItemType.Gloves ||
+                    itemType == ItemDropData.ItemType.Shoes ||
+                    itemType == ItemDropData.ItemType.Consumable)
                 {
-                    EditorGUILayout.PropertyField(weaponDataProp, new GUIContent("Weapon Data"));
+                    EditorGUILayout.PropertyField(itemDataProp, new GUIContent("Item Data"));
                     
-                    if (weaponDataProp.objectReferenceValue == null)
+                    if (itemDataProp.objectReferenceValue == null)
                     {
-                        EditorGUILayout.HelpBox("Weapon Data is required for Weapon type items.", MessageType.Warning);
+                        EditorGUILayout.HelpBox("Item Data is required for this item type.", MessageType.Warning);
                     }
                 }
                 else if (itemType == ItemDropData.ItemType.Coin)
@@ -247,9 +252,14 @@ public class EnemyItemDropperEditor : Editor
         string typeName = dropData.itemType.ToString();
         string spawnRateText = $"{(dropData.spawnRate * 100):F0}%";
         
-        if (dropData.itemType == ItemDropData.ItemType.Weapon && dropData.weaponData != null)
+        if ((dropData.itemType == ItemDropData.ItemType.Weapon || 
+             dropData.itemType == ItemDropData.ItemType.Armor ||
+             dropData.itemType == ItemDropData.ItemType.Hat ||
+             dropData.itemType == ItemDropData.ItemType.Gloves ||
+             dropData.itemType == ItemDropData.ItemType.Shoes ||
+             dropData.itemType == ItemDropData.ItemType.Consumable) && dropData.itemData != null)
         {
-            return $"Item Drop {index + 1}: {typeName} ({dropData.weaponData.weaponName}) - {spawnRateText}";
+            return $"Item Drop {index + 1}: {typeName} ({dropData.itemData.itemName}) - {spawnRateText}";
         }
         else if (dropData.itemType == ItemDropData.ItemType.Coin)
         {

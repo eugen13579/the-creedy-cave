@@ -7,6 +7,8 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private float currentHealth;
     [SerializeField] private float attackDamage = 100f;
     
+    private bool isDead = false;
+    
     public event Action<float, float> OnHealthChanged; // currentHealth, maxHealth
     public event Action<EnemyHealth, float> OnDamageTaken; // enemy, damage amount
     public event Action OnDeath;
@@ -18,6 +20,7 @@ public class EnemyHealth : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
+        isDead = false;
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         
         // Auto-subscribe to DamageNumberManager if it exists
@@ -47,11 +50,13 @@ public class EnemyHealth : MonoBehaviour
     
     public void TakeDamage(float damage)
     {
+        if (isDead) return; // Don't take damage if already dead
+        
         currentHealth = Mathf.Max(0, currentHealth - damage);
         OnDamageTaken?.Invoke(this, damage);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         
-        if (currentHealth <= 0)
+        if (currentHealth <= 0 && !isDead)
         {
             Die();
         }
@@ -72,6 +77,9 @@ public class EnemyHealth : MonoBehaviour
     
     private void Die()
     {
+        if (isDead) return; // Prevent multiple death calls
+        
+        isDead = true;
         OnDeath?.Invoke();
         Debug.Log("Enemy died!");
     }

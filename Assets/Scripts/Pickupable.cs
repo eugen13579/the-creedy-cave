@@ -5,30 +5,109 @@ using System.Collections;
 [RequireComponent(typeof(CircleCollider2D))]
 public class Pickupable : MonoBehaviour
 {
-    public WeaponData weaponData;
+    public ItemData itemData;
     [SerializeField] private float bobAmount = 0.1f;
     [SerializeField] private float bobSpeed = 2f;
+    [SerializeField] private float pickupDelay = 0.5f; // Delay before item can be picked up
+    [SerializeField] private float spriteSize = 1; // Fixed size for the sprite (in world units)
     
     private SpriteRenderer spriteRenderer;
     private Vector3 startPos;
+    private bool canPickup = false;
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sortingLayerName = "Player";
+        spriteRenderer.sortingOrder = 1;
         
         var collider = GetComponent<CircleCollider2D>();
         collider.isTrigger = true;
         
-        if (weaponData != null && weaponData.icon != null)
+        if (itemData != null && itemData.icon != null)
         {
-            spriteRenderer.sprite = weaponData.icon;
+            spriteRenderer.sprite = itemData.icon;
         }
+    }
+    
+    void OnEnable()
+    {
+        // Set sprite size when component is enabled (after itemData might be set)
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        
+        // If sprite is already set (e.g., by EnemyItemDropper), apply size
+        if (spriteRenderer != null && spriteRenderer.sprite != null)
+        {
+            SetSpriteSize();
+        }
+    }
+    
+    private void SetSpriteSize()
+    {
+        if (spriteRenderer == null || spriteRenderer.sprite == null)
+            return;
+        
+        // Get the sprite's bounds in world units
+        Bounds spriteBounds = spriteRenderer.sprite.bounds;
+        float spriteWidth = spriteBounds.size.x;
+        float spriteHeight = spriteBounds.size.y;
+        float maxDimension = Mathf.Max(spriteWidth, spriteHeight);
+        
+        // Scale sprite so its largest dimension equals spriteSize
+        if (maxDimension > 0)
+        {
+            float scaleFactor = spriteSize / maxDimension;
+            transform.localScale = Vector3.one * scaleFactor;
+        }
+    }
+    
+    /// <summary>
+    /// Public method to apply sprite size. Can be called externally after itemData is set.
+    /// </summary>
+    public void ApplySpriteSize()
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingLayerName = "Player";
+            spriteRenderer.sortingOrder = 1;
+        }
+        
+        if (itemData != null && itemData.icon != null && spriteRenderer != null)
+        {
+            spriteRenderer.sprite = itemData.icon;
+        }
+        
+        SetSpriteSize();
     }
 
     void Start()
     {
         startPos = transform.position;
+        
+        // Ensure sprite is set and size is applied
+        if (itemData != null && itemData.icon != null && spriteRenderer != null)
+        {
+            spriteRenderer.sprite = itemData.icon;
+        }
+        
+        // Apply size in Start to ensure sprite is ready
+        SetSpriteSize();
+        
+        StartCoroutine(EnablePickupAfterDelay());
+    }
+    
+    private IEnumerator EnablePickupAfterDelay()
+    {
+        yield return new WaitForSeconds(pickupDelay);
+        canPickup = true;
     }
 
     void Update()
@@ -39,17 +118,22 @@ public class Pickupable : MonoBehaviour
 
     void OnValidate()
     {
-        // Update sprite in editor when weaponData changes
-        if (weaponData != null && weaponData.icon != null)
+        // Update sprite in editor when itemData changes
+        if (itemData != null && itemData.icon != null)
         {
             var sr = GetComponent<SpriteRenderer>();
-            if (sr != null) sr.sprite = weaponData.icon;
+            if (sr != null)
+            {
+                sr.sprite = itemData.icon;
+                spriteRenderer = sr;
+                SetSpriteSize();
+            }
         }
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && canPickup)
         {
             StartCoroutine(TryPickupItem());
         }
@@ -125,7 +209,7 @@ public class Pickupable : MonoBehaviour
         // Now try to add the item
         if (InventoryController.Instance != null)
         {
-            if (InventoryController.Instance.AddItem(weaponData))
+            if (InventoryController.Instance.AddItem(itemData))
             {
                 Destroy(gameObject);
             }

@@ -2,19 +2,27 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>
+/// Controls individual inventory cell behavior, including item display, selection, and interaction.
+/// </summary>
 public class CellController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    [Header("UI References")]
+    [SerializeField] private GameObject highlight;
+    [SerializeField] private Image itemIcon;
+
     public bool selected = false;
-    public GameObject highlight;
-    public Image itemIcon;
-    public WeaponData currentItem;
+    public ItemData currentItem;
+
     private Animator animator;
 
-    void Start()
+    private void Start()
     {
         animator = GetComponent<Animator>();
         if (highlight != null)
+        {
             highlight.SetActive(false);
+        }
     }
 
     public void SetHighlight(bool show)
@@ -42,12 +50,12 @@ public class CellController : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         InventoryController.Instance.SelectCell(this);
     }
 
-    public void SetItem(WeaponData weapon)
+    public void SetItem(ItemData item)
     {
-        currentItem = weapon;
-        if (itemIcon != null && weapon != null)
+        currentItem = item;
+        if (itemIcon != null && item != null)
         {
-            itemIcon.sprite = weapon.icon;
+            itemIcon.sprite = item.icon;
             itemIcon.color = Color.white;
             itemIcon.enabled = true;
         }

@@ -14,11 +14,10 @@ public class DeathManager : MonoBehaviour
     
     [Header("Options")]
     [SerializeField] private bool pauseGameOnDeath = true; // Có pause game khi chết không
-    [SerializeField] private string mainMenuSceneName = "Menu"; // Tên scene main menu
     
     private bool isDeathScreenActive = false;
     
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -31,17 +30,17 @@ public class DeathManager : MonoBehaviour
         }
     }
     
-    void OnEnable()
+    private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
     
-    void OnDisable()
+    private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
     
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         isDeathScreenActive = false;
         Time.timeScale = 1f;
@@ -103,7 +102,7 @@ public class DeathManager : MonoBehaviour
         #endif
     }
     
-    void OnDestroy()
+    private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         
@@ -113,3 +112,4 @@ public class DeathManager : MonoBehaviour
         }
     }
 }
+

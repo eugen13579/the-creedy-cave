@@ -9,11 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78db65c5b82ba4834979b59543223a43, type: 3}
+  m_Script: {fileID: 11500000, guid: 2e4cb0241df9f4b839a5f423b172c24b, type: 3}
   m_Name: HealthFlask
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: Health Flask
+  itemName: Health Flask
   icon: {fileID: 1615732897503146058, guid: 3bd981836118f42d2a062ebc6e83b30c, type: 3}
+  itemType: 5
   damage: 0
   attackSpeed: 0
+  defense: 0
   sellPrice: 1

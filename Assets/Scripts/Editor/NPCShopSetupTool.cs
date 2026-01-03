@@ -82,14 +82,14 @@ public class NPCShopSetupTool : EditorWindow
             Debug.Log("Linked Press E prompt to NPC");
         }
         
-        // Step 6: Load Bow WeaponData and assign to ShopUI
-        WeaponData bowData = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/Assets/Items/Bow.asset");
+        // Step 6: Load Bow ItemData and assign to ShopUI
+        ItemData bowData = AssetDatabase.LoadAssetAtPath<ItemData>("Assets/Assets/Items/Bow.asset");
         if (bowData != null)
         {
             SerializedObject serializedShopUI = new SerializedObject(shopUI);
             serializedShopUI.FindProperty("bowWeaponData").objectReferenceValue = bowData;
             serializedShopUI.ApplyModifiedProperties();
-            Debug.Log("Loaded and assigned Bow WeaponData to ShopUI");
+            Debug.Log("Loaded and assigned Bow ItemData to ShopUI");
         }
         else
         {

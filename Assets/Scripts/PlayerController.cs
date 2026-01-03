@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Controls player movement, combat, and animations.
+/// Handles both melee and ranged attacks, health management, and input processing.
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
-    // [SerializeField] [Range(0.1f, 1f)] private float colliderSizeScale = 0.8f; // Scale down collider to fit through narrow passages
     [SerializeField] private float attackRange = 1.5f; // Distance to attack enemies
     [SerializeField] private float attackCooldown = 1.0f; // Time between attacks
     [SerializeField] private float rangedAttackCooldown = 0.5f; // Time between ranged attacks
@@ -115,19 +118,12 @@ public class PlayerController : MonoBehaviour
         };
         #endif
 
-        // Get or add BoxCollider2D and adjust size for narrow passages
+        // Get or add BoxCollider2D
         boxCollider = GetComponent<BoxCollider2D>();
         if (boxCollider == null)
         {
             boxCollider = gameObject.AddComponent<BoxCollider2D>();
         }
-        
-        // Adjust collider size to be smaller than sprite for narrow passages
-        // if (spriteRenderer != null && spriteRenderer.sprite != null)
-        // {
-        //     Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
-        //     boxCollider.size = spriteSize * colliderSizeScale;
-        // }
         
         // Prevent enemies from pushing player by ignoring collision with enemy colliders
         // This allows enemies to detect player (via OverlapCircle) but not push them
@@ -556,7 +552,7 @@ public class PlayerController : MonoBehaviour
         if (weaponCell != null && weaponCell.currentItem != null)
         {
             // Check if equipped weapon is the bow (by name)
-            return weaponCell.currentItem.weaponName == "Bow";
+            return weaponCell.currentItem.itemName == "Bow";
         }
         
         return false;

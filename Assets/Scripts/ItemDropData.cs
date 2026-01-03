@@ -6,6 +6,11 @@ public class ItemDropData : ScriptableObject
     public enum ItemType
     {
         Weapon,
+        Armor,
+        Hat,
+        Gloves,
+        Shoes,
+        Consumable,
         Coin
     }
     
@@ -16,9 +21,9 @@ public class ItemDropData : ScriptableObject
     [Tooltip("Probability of this item spawning when enemy dies (0 = never, 1 = always)")]
     public float spawnRate = 0.5f;
     
-    [Header("Weapon Settings")]
-    [Tooltip("Weapon data to spawn (only used when Item Type is Weapon)")]
-    public WeaponData weaponData;
+    [Header("Item Settings")]
+    [Tooltip("Item data to spawn (used when Item Type is Weapon, Armor, Hat, Gloves, Shoes, or Consumable)")]
+    public ItemData itemData;
     
     [Header("Coin Settings")]
     [Tooltip("Coin value (optional, only used when Item Type is Coin)")]

@@ -8,12 +8,12 @@ using UnityEngine.UI;
 public class WeaponCell : MonoBehaviour
 {
     public Image weaponIcon;
-    public WeaponData equippedWeapon;
+    public ItemData equippedWeapon;
     
     /// <summary>
     /// Sets the equipped weapon and updates the UI.
     /// </summary>
-    public void SetWeapon(WeaponData weapon)
+    public void SetWeapon(ItemData weapon)
     {
         equippedWeapon = weapon;
         

@@ -214,7 +214,7 @@ public class SaveSystem : MonoBehaviour
                     CellController cell = cellTransform.GetComponent<CellController>();
                     if (cell != null && cell.currentItem != null)
                     {
-                        weaponNames.Add(cell.currentItem.weaponName);
+                        weaponNames.Add(cell.currentItem.itemName);
                     }
                 }
             }
@@ -224,7 +224,7 @@ public class SaveSystem : MonoBehaviour
             // Get equipped weapon
             if (inventoryController.WeaponCell != null && inventoryController.WeaponCell.currentItem != null)
             {
-                saveData.equippedWeaponName = inventoryController.WeaponCell.currentItem.weaponName;
+                saveData.equippedWeaponName = inventoryController.WeaponCell.currentItem.itemName;
             }
         }
         else
@@ -236,7 +236,7 @@ public class SaveSystem : MonoBehaviour
         CoinManager coinManager = Object.FindFirstObjectByType<CoinManager>();
         if (coinManager != null)
         {
-            saveData.coinCount = coinManager.coinCount;
+            saveData.coinCount = coinManager.CoinCount;
         }
         else
         {
@@ -355,14 +355,14 @@ public class SaveSystem : MonoBehaviour
             {
                 foreach (string weaponName in saveData.inventoryWeaponNames)
                 {
-                    WeaponData weapon = LoadWeaponDataByName(weaponName);
-                    if (weapon != null)
+                    ItemData item = LoadItemDataByName(weaponName);
+                    if (item != null)
                     {
-                        inventoryController.AddItem(weapon);
+                        inventoryController.AddItem(item);
                     }
                     else
                     {
-                        Debug.LogWarning($"Could not load weapon: {weaponName}");
+                        Debug.LogWarning($"Could not load item: {weaponName}");
                     }
                 }
             }
@@ -370,7 +370,7 @@ public class SaveSystem : MonoBehaviour
             // Restore equipped weapon
             if (!string.IsNullOrEmpty(saveData.equippedWeaponName))
             {
-                WeaponData equippedWeapon = LoadWeaponDataByName(saveData.equippedWeaponName);
+                ItemData equippedWeapon = LoadItemDataByName(saveData.equippedWeaponName);
                 if (equippedWeapon != null && inventoryController.WeaponCell != null)
                 {
                     inventoryController.WeaponCell.SetItem(equippedWeapon);
@@ -386,7 +386,7 @@ public class SaveSystem : MonoBehaviour
         CoinManager coinManager = Object.FindFirstObjectByType<CoinManager>();
         if (coinManager != null)
         {
-            coinManager.coinCount = saveData.coinCount;
+            coinManager.CoinCount = saveData.coinCount;
         }
         else
         {
@@ -432,47 +432,47 @@ public class SaveSystem : MonoBehaviour
     }
     
     /// <summary>
-    /// Loads a WeaponData ScriptableObject by name.
+    /// Loads an ItemData ScriptableObject by name.
     /// </summary>
-    /// <param name="weaponName">Name of the weapon to load</param>
-    /// <returns>WeaponData if found, null otherwise</returns>
-    private static WeaponData LoadWeaponDataByName(string weaponName)
+    /// <param name="itemName">Name of the item to load</param>
+    /// <returns>ItemData if found, null otherwise</returns>
+    private static ItemData LoadItemDataByName(string itemName)
     {
-        if (string.IsNullOrEmpty(weaponName))
+        if (string.IsNullOrEmpty(itemName))
         {
             return null;
         }
         
         #if UNITY_EDITOR
         // In editor, use AssetDatabase
-        string[] guids = UnityEditor.AssetDatabase.FindAssets($"{weaponName} t:WeaponData");
+        string[] guids = UnityEditor.AssetDatabase.FindAssets($"{itemName} t:ItemData");
         if (guids.Length > 0)
         {
             string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-            WeaponData weapon = UnityEditor.AssetDatabase.LoadAssetAtPath<WeaponData>(path);
-            if (weapon != null && weapon.weaponName == weaponName)
+            ItemData item = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemData>(path);
+            if (item != null && item.itemName == itemName)
             {
-                return weapon;
+                return item;
             }
         }
         
-        // Try searching all WeaponData assets
-        guids = UnityEditor.AssetDatabase.FindAssets("t:WeaponData");
+        // Try searching all ItemData assets
+        guids = UnityEditor.AssetDatabase.FindAssets("t:ItemData");
         foreach (string guid in guids)
         {
             string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            WeaponData weapon = UnityEditor.AssetDatabase.LoadAssetAtPath<WeaponData>(path);
-            if (weapon != null && weapon.weaponName == weaponName)
+            ItemData item = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemData>(path);
+            if (item != null && item.itemName == itemName)
             {
-                return weapon;
+                return item;
             }
         }
         #else
         // At runtime, try Resources folder
-        WeaponData weapon = Resources.Load<WeaponData>(weaponName);
-        if (weapon != null)
+        ItemData item = Resources.Load<ItemData>(itemName);
+        if (item != null)
         {
-            return weapon;
+            return item;
         }
         #endif
         

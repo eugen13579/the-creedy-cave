@@ -355,7 +355,7 @@ public class LevelCompleteManager : MonoBehaviour
             
             if (coinManager != null)
             {
-                points = coinManager.coinCount;
+                points = coinManager.CoinCount;
             }
             
             pointsText.text = $"Points: {points}";
